@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Дашборд — Калькулятор стоимости найма</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6fa; color: #1a1f36; padding: 24px; }
+    .container { max-width: 1300px; margin: 0 auto; }
+    h1 { font-size: 26px; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 24px; font-size: 14px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .btn { background: #6366f1; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #4f46e5; }
+    .btn.secondary { background: #e5e7eb; color: #374151; }
+    .btn.secondary:hover { background: #d1d5db; }
+    .btn.danger { background: #ef4444; }
+    .btn.danger:hover { background: #dc2626; }
+    .btn.small { padding: 6px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Вкладки */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+    .tab {
+        padding: 10px 20px; font-size: 14px; font-weight: 600;
+        color: #6b7280; cursor: pointer; border: none; background: none;
+        border-bottom: 3px solid transparent; margin-bottom: -2px;
+        transition: color 0.2s, border-color 0.2s;
+    }
+    .tab:hover { color: #4f46e5; }
+    .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .tab .count {
+        display: inline-block; background: #e5e7eb; color: #374151;
+        font-size: 11px; padding: 2px 7px; border-radius: 10px;
+        margin-left: 6px; font-weight: 700;
+    }
+    .tab.active .count { background: #6366f1; color: #fff; }
+
+    .vacancy-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(600px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 680px) { .vacancy-list { grid-template-columns: 1fr; } }
+    .vacancy-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-top: 4px solid #6366f1; }
+    .vacancy-card.archived { border-top-color: #9ca3af; opacity: 0.85; }
+    .vacancy-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 8px; }
+    .vacancy-title { font-size: 17px; font-weight: 700; word-break: break-word; }
+    .vacancy-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .vacancy-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+    .section { background: #f9fafb; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .section-title { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .participant-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .participant-table th { text-align: left; color: #6b7280; font-weight: 600; padding: 4px 4px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .participant-table th.right { text-align: right; }
+    .participant-table td { padding: 4px; vertical-align: middle; }
+    .participant-table input { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; min-width: 0; }
+    .participant-table input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+    .participant-table .name { font-size: 12px; color: #4b5563; padding-right: 8px; white-space: nowrap; }
+    .participant-table .calc { text-align: right; font-weight: 600; color: #1a1f36; white-space: nowrap; font-size: 13px; }
+    .participant-table .calc small { display: block; font-weight: 400; font-size: 10px; color: #9ca3af; }
+    .participant-table tr.total-row td { border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    .participant-table tr.total-row .name { font-weight: 700; color: #1a1f36; font-size: 13px; }
+    .participant-table tr.total-row .calc { font-size: 16px; color: #4f46e5; }
+    .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .row label { flex: 1; color: #4b5563; font-size: 12px; }
+    .row input { width: 140px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; text-align: right; }
+    .row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+    .row .suffix { font-size: 11px; color: #9ca3af; width: 20px; }
+    .row.total { border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px; font-weight: 700; }
+    .row.total label { color: #1a1f36; }
+    .row.total .val { width: 160px; text-align: right; font-size: 15px; color: #1a1f36; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+    .kpi-box { background: #f9fafb; border-radius: 10px; padding: 12px; border-left: 4px solid #6366f1; }
+    .kpi-box.green { border-left-color: #10b981; }
+    .kpi-box.orange { border-left-color: #f59e0b; }
+    .kpi-box.red { border-left-color: #ef4444; }
+    .kpi-box .label { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
+    .kpi-box .value { font-size: 18px; font-weight: 700; color: #1a1f36; }
+    .kpi-box .value.good { color: #10b981; }
+    .kpi-box .value.warn { color: #f59e0b; }
+    .kpi-box .value.bad { color: #ef4444; }
+    .summary-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px; }
+    .summary-card h2 { font-size: 16px; margin-bottom: 16px; color: #374151; }
+    .summary-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .summary-kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .summary-kpis { grid-template-columns: 1fr; } }
+    .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
+    .empty-state h3 { color: #6b7280; margin-bottom: 8px; font-size: 18px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 18px; margin-bottom: 16px; }
+    .modal .input-group { margin-bottom: 14px; }
+    .modal .input-group label { display: block; font-size: 13px; color: #4b5563; margin-bottom: 4px; }
+    .modal .input-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+    .modal .input-group input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1a1f36; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; transition: transform 0.3s; z-index: 2000; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .loading { text-align: center; padding: 60px 20px; color: #6b7280; font-size: 15px; }
+    .error-box { max-width: 600px; margin: 60px auto; padding: 24px; background: #fff; border-radius: 14px; border-left: 4px solid #ef4444; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .error-box h3 { color: #ef4444; margin-bottom: 12px; }
+    .error-box p { color: #4b5563; font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+    .error-box code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #1a1f36; }
+    .sync-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 12px; background: #d1fae5; color: #065f46; margin-left: 8px; }
+    .sync-badge.syncing { background: #fef3c7; color: #92400e; }
+    .sync-badge.error { background: #fee2e2; color: #991b1b; }
+    .archive-hint { font-size: 12px; color: #6b7280; margin-bottom: 16px; }
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="loadingScreen" class="loading">Загрузка данных...</div>
+<div id="errorScreen" class="hidden"></div>
+
+<div id="appScreen" class="container hidden">
+    <div class="topbar">
+        <div>
+            <h1>📊 HR Дашборд — Калькулятор стоимости найма</h1>
+            <p class="subtitle">
+                Оклад ÷ норма часов × часы = вклад в вакансию.
+                <span class="sync-badge" id="syncBadge">Готов</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="topbar">
+        <button class="btn" onclick="openModal()">+ Новая вакансия</button>
+        <div style="display:flex; gap:8px;">
+            <button class="btn secondary small" onclick="exportData()">📥 Экспорт CSV</button>
+            <button class="btn secondary small" onclick="refreshData()" id="refreshBtn">🔄 Обновить</button>
+        </div>
+    </div>
+
+    <div class="summary-card" id="summaryCard" style="display:none;">
+        <h2>📈 Сводка по всем вакансиям</h2>
+        <div class="summary-kpis">
+            <div class="kpi-box"><div class="label">Вакансий всего</div><div class="value" id="sumVacancies">0</div></div>
+            <div class="kpi-box green"><div class="label">Всего нанято</div><div class="value" id="sumHired">0</div></div>
+            <div class="kpi-box orange"><div class="label">Средний Time to Hire</div><div class="value" id="sumTime">0 <span style="font-size:13px;color:#6b7280;">дн.</span></div></div>
+            <div class="kpi-box red"><div class="label">Средний Cost per Hire</div><div class="value" id="sumCost">0 <span style="font-size:13px;color:#6b7280;">₽</span></div></div>
+        </div>
+        <h2 style="margin-top:20px;">💸 Затраты по месяцам (внутренние + внешние)</h2>
+        <canvas id="monthlyChart" height="70"></canvas>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" id="tabActive" onclick="switchTab('active')">
+            Активные <span class="count" id="countActive">0</span>
+        </button>
+        <button class="tab" id="tabArchive" onclick="switchTab('archive')">
+            📦 Архив <span class="count" id="countArchive">0</span>
+        </button>
+    </div>
+
+    <div id="archiveHint" class="archive-hint hidden">
+        Здесь вакансии, закрытые более 4 месяцев назад. Можно вернуть в активные кнопкой «↩️ Вернуть».
+    </div>
+
+    <div class="vacancy-list" id="vacancyList"></div>
+
+    <div class="empty-state" id="emptyState" style="display:none;">
+        <h3>Пока нет вакансий</h3>
+        <p>Нажмите «+ Новая вакансия», чтобы начать</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h3 id="modalTitle">Новая вакансия</h3>
+        <input type="hidden" id="editId">
+        <div class="input-group">
+            <label>Название позиции *</label>
+            <input type="text" id="vacTitle" placeholder="Например: Менеджер-SEO">
+        </div>
+        <div class="modal-grid">
+            <div class="input-group"><label>Дата открытия</label><input type="date" id="vacOpen"></div>
+            <div class="input-group"><label>Дата закрытия</label><input type="date" id="vacClose"></div>
+        </div>
+        <div class="modal-grid">
+            <div class="input-group"><label>Оклад по вакансии, ₽/мес</label><input type="number" id="vacSalary" value="0" min="0"></div>
+            <div class="input-group"><label>Число наймов</label><input type="number" id="vacHires" value="1" min="0"></div>
+        </div>
+        <div class="input-group"><label>Норма рабочих часов в месяц</label><input type="number" id="vacHours" value="164" min="0"></div>
+        <div class="modal-actions">
+            <button class="btn secondary" onclick="closeModal()">Отмена</button>
+            <button class="btn" onclick="saveVacancy()" id="saveBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+});
+
+const NORM_HOURS_DEFAULT = 164;
+const ARCHIVE_MONTHS = 4; // через сколько месяцев закрытая вакансия уходит в архив
+
+const HOURLY_PARTICIPANTS = [
+    { key: 'recruiter', label: 'Рекрутер' },
+    { key: 'manager', label: 'Нанимающий менеджер' },
+    { key: 'interviewers', label: 'Интервьюеры / эксперты' },
+    { key: 'hrAdmin', label: 'HR-администрирование' }
+];
+const KPI_KEY = 'kpi';
+const EXTERNAL_ITEMS = [
+    { key: 'publication', label: 'Публикация вакансий' },
+    { key: 'agency', label: 'Кадровое агентство / фриланс' },
+    { key: 'referral', label: 'Бонусы за рекомендацию' },
+    { key: 'target', label: 'Таргет на вакансию' },
+    { key: 'assessment', label: 'Тестирования / ассессменты' },
+    { key: 'medical', label: 'Медосмотр и прочее' },
+    { key: 'other', label: 'Прочие внешние расходы' }
+];
+
+let vacancies = [];
+let monthlyChart = null;
+let realtimeChannel = null;
+let saveTimers = {};
+let currentTab = 'active';
+
+function num(v) { return Math.max(0, Number(v) || 0); }
+function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
+function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function daysBetween(open, close) {
+    if (!open || !close) return 0;
+    const d1 = new Date(open), d2 = new Date(close);
+    if (isNaN(d1) || isNaN(d2)) return 0;
+    const diff = Math.round((d2 - d1) / (1000*60*60*24));
+    return diff > 0 ? diff : 0;
+}
+function monthsBetween(dateStr) {
+    if (!dateStr) return 0;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return 0;
+    const now = new Date();
+    return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+}
+function isArchived(v) {
+    if (!v.close_date) return false;
+    return monthsBetween(v.close_date) > ARCHIVE_MONTHS;
+}
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+function setSync(status) {
+    const el = document.getElementById('syncBadge');
+    if (!el) return;
+    el.className = 'sync-badge' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
+    el.textContent = status === 'syncing' ? 'Сохранение...' : status === 'error' ? 'Ошибка' : 'Готов';
+}
+function showError(title, message, details) {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    const el = document.getElementById('errorScreen');
+    el.classList.remove('hidden');
+    el.innerHTML = '<div class="error-box"><h3>⚠️ ' + esc(title) + '</h3><p>' + message + '</p>' +
+        (details ? '<p style="font-size:12px;color:#9ca3af;margin-top:12px;">Деталь: <code>' + esc(details) + '</code></p>' : '') +
+        '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипт выполнен в Supabase и RLS-политики разрешают чтение.</p></div>';
+}
+
+function calc(v) {
+    const p = v.participants || {};
+    const normHours = num(v.norm_hours) || NORM_HOURS_DEFAULT;
+    let internalSum = 0;
+    const rows = [];
+    HOURLY_PARTICIPANTS.forEach(item => {
+        const salary = num(p[item.key + '_salary']);
+        const hours = num(p[item.key + '_hours']);
+        const rate = salary / normHours;
+        const cost = rate * hours;
+        internalSum += cost;
+        rows.push({ key: item.key, label: item.label, salary, hours, rate, cost });
+    });
+    const kpi = num(p[KPI_KEY]);
+    internalSum += kpi;
+    const ext = v.external || {};
+    const externalSum = EXTERNAL_ITEMS.reduce((s, i) => s + num(ext[i.key]), 0);
+    const total = internalSum + externalSum;
+    const hires = num(v.hires);
+    const costPerHire = hires > 0 ? total / hires : 0;
+    return { rows, kpi, internalSum, externalSum, total, hires, costPerHire, normHours };
+}
+
+async function loadVacancies() {
+    setSync('syncing');
+    try {
+        const { data, error } = await sb.from('vacancies').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        vacancies = data || [];
+        setSync('ok');
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        render();
+    } catch (err) {
+        console.error('Ошибка загрузки:', err);
+        setSync('error');
+        showError('Не удалось загрузить данные', 'Проверьте подключение к Supabase и настройки таблицы.', err.message || String(err));
+    }
+}
+
+async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true; btn.textContent = '⏳ Обновление...';
+    await loadVacancies();
+    btn.disabled = false; btn.textContent = '🔄 Обновить';
+    toast('Данные обновлены');
+}
+
+function subscribeRealtime() {
+    if (realtimeChannel) sb.removeChannel(realtimeChannel);
+    realtimeChannel = sb.channel('vacancies-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'vacancies' }, () => { loadVacancies(); })
+        .subscribe();
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+    document.getElementById('tabArchive').classList.toggle('active', tab === 'archive');
+    document.getElementById('archiveHint').classList.toggle('hidden', tab !== 'archive');
+    render();
+}
+
+function render() {
+    const list = document.getElementById('vacancyList');
+    const empty = document.getElementById('emptyState');
+    const summary = document.getElementById('summaryCard');
+    list.innerHTML = '';
+
+    const active = vacancies.filter(v => !isArchived(v));
+    const archive = vacancies.filter(v => isArchived(v));
+
+    document.getElementById('countActive').textContent = active.length;
+    document.getElementById('countArchive').textContent = archive.length;
+
+    if (vacancies.length === 0) {
+        empty.style.display = 'block';
+        summary.style.display = 'none';
+        return;
+    }
+    empty.style.display = 'none';
+    summary.style.display = 'block';
+
+    const visible = currentTab === 'active' ? active : archive;
+
+    if (visible.length === 0) {
+        list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><h3>' +
+            (currentTab === 'active' ? 'Нет активных вакансий' : 'Архив пуст') +
+            '</h3><p>' + (currentTab === 'active' ? 'Все вакансии либо в архиве, либо ещё не созданы' : 'Закрытые более 4 месяцев назад появятся здесь') + '</p></div>';
+    } else {
+        visible.forEach(v => list.appendChild(renderCard(v)));
+    }
+
+    renderSummary();
+}
+
+function renderCard(v) {
+    const card = document.createElement('div');
+    card.className = 'vacancy-card' + (isArchived(v) ? ' archived' : '');
+    const m = calc(v);
+    const days = daysBetween(v.open_date, v.close_date);
+    const costColor = m.costPerHire === 0 ? '' : m.costPerHire <= 30000 ? 'good' : m.costPerHire <= 60000 ? 'warn' : 'bad';
+    const archived = isArchived(v);
+
+    const participantRows = m.rows.map(r => `
+        <tr>
+            <td class="name">${r.label}</td>
+            <td><input type="number" min="0" placeholder="оклад" value="${r.salary || ''}" onchange="updateParticipant('${v.id}', '${r.key}_salary', this.value)"></td>
+            <td><input type="number" min="0" placeholder="часы" value="${r.hours || ''}" onchange="updateParticipant('${v.id}', '${r.key}_hours', this.value)"></td>
+            <td class="calc">${fmt(r.cost)} ₽<small>${r.rate > 0 ? fmt(r.rate) + ' ₽/ч' : ''}</small></td>
+        </tr>
+    `).join('');
+
+    card.innerHTML = `
+        <div class="vacancy-header">
+            <div>
+                <div class="vacancy-title">${esc(v.title)}</div>
+                <div class="vacancy-meta">${v.open_date ? 'Открыта: ' + v.open_date : ''}${v.close_date ? ' · Закрыта: ' + v.close_date : ''}${days ? ' · ' + days + ' дн. в работе' : ''}</div>
+            </div>
+            <div class="vacancy-actions">
+                ${archived ? `<button class="btn secondary small" onclick="restoreVacancy('${v.id}')">↩️ Вернуть</button>` : ''}
+                <button class="btn secondary small" onclick="editVacancy('${v.id}')">✏️</button>
+                <button class="btn danger small" onclick="deleteVacancy('${v.id}')">🗑️</button>
+            </div>
+        </div>
+        <div class="kpi-grid">
+            <div class="kpi-box"><div class="label">Оклад по вакансии</div><div class="value">${fmt(num(v.salary))} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
+            <div class="kpi-box green"><div class="label">Число наймов</div><div class="value">${m.hires}</div></div>
+            <div class="kpi-box orange"><div class="label">Полная стоимость</div><div class="value">${fmt(m.total)} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
+            <div class="kpi-box red"><div class="label">Cost per Hire</div><div class="value ${costColor}">${fmt(m.costPerHire)} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
+        </div>
+        <div class="section">
+            <div class="section-title">👥 Внутренние затраты (оклад ÷ ${m.normHours} × часы)</div>
+            <table class="participant-table">
+                <thead><tr><th>Участник</th><th>Оклад, ₽/мес</th><th>Часы</th><th class="right">Вклад</th></tr></thead>
+                <tbody>
+                    ${participantRows}
+                    <tr><td class="name">KPI за выход кандидата</td><td colspan="2"><input type="number" min="0" placeholder="сумма ₽" value="${m.kpi || ''}" onchange="updateParticipant('${v.id}', '${KPI_KEY}', this.value)"></td><td class="calc">${fmt(m.kpi)} ₽</td></tr>
+                    <tr class="total-row"><td class="name">Итого внутренние</td><td colspan="2"></td><td class="calc">${fmt(m.internalSum)} ₽</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="section">
+            <div class="section-title">💸 Внешние расходы</div>
+            ${EXTERNAL_ITEMS.map(i => `
+                <div class="row">
+                    <label>${i.label}</label>
+                    <input type="number" min="0" value="${num((v.external||{})[i.key]) || ''}" placeholder="0" onchange="updateExternal('${v.id}', '${i.key}', this.value)">
+                    <span class="suffix">₽</span>
+                </div>
+            `).join('')}
+            <div class="row total"><label>Итого внешние</label><span class="val">${fmt(m.externalSum)} ₽</span></div>
+        </div>
+        <div class="section" style="background:#eef2ff;">
+            <div class="row total" style="border:none;margin:0;padding:0;">
+                <label style="font-size:14px;">ПОЛНАЯ СТОИМОСТЬ НАЙМА</label>
+                <span class="val" style="font-size:18px;color:#4f46e5;">${fmt(m.total)} ₽</span>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+function debouncedSave(id, patch) {
+    const v = vacancies.find(x => x.id === id);
+    if (v) {
+        if (patch.participants) v.participants = { ...v.participants, ...patch.participants };
+        if (patch.external) v.external = { ...v.external, ...patch.external };
+        if (patch.salary !== undefined) v.salary = patch.salary;
+        if (patch.hires !== undefined) v.hires = patch.hires;
+        if (patch.norm_hours !== undefined) v.norm_hours = patch.norm_hours;
+        if (patch.title !== undefined) v.title = patch.title;
+        if (patch.open_date !== undefined) v.open_date = patch.open_date;
+        if (patch.close_date !== undefined) v.close_date = patch.close_date;
+    }
+    render();
+    if (saveTimers[id]) clearTimeout(saveTimers[id]);
+    setSync('syncing');
+    saveTimers[id] = setTimeout(async () => {
+        const { error } = await sb.from('vacancies').update(patch).eq('id', id);
+        if (error) { setSync('error'); toast('Ошибка сохранения: ' + error.message); }
+        else { setSync('ok'); }
+    }, 600);
+}
+function updateParticipant(id, key, value) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    const participants = { ...(v.participants || {}) };
+    participants[key] = num(value);
+    debouncedSave(id, { participants });
+}
+function updateExternal(id, key, value) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    const external = { ...(v.external || {}) };
+    external[key] = num(value);
+    debouncedSave(id, { external });
+}
+
+function openModal(id) {
+    const modal = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    document.getElementById('editId').value = '';
+    if (id) {
+        const v = vacancies.find(x => x.id === id);
+        if (!v) return;
+        title.textContent = 'Редактировать вакансию';
+        document.getElementById('vacTitle').value = v.title;
+        document.getElementById('vacOpen').value = v.open_date || '';
+        document.getElementById('vacClose').value = v.close_date || '';
+        document.getElementById('vacSalary').value = v.salary || 0;
+        document.getElementById('vacHires').value = v.hires || 1;
+        document.getElementById('vacHours').value = v.norm_hours || 164;
+        document.getElementById('editId').value = id;
+    } else {
+        title.textContent = 'Новая вакансия';
+        document.getElementById('vacTitle').value = '';
+        document.getElementById('vacOpen').value = new Date().toISOString().slice(0,10);
+        document.getElementById('vacClose').value = '';
+        document.getElementById('vacSalary').value = 0;
+        document.getElementById('vacHires').value = 1;
+        document.getElementById('vacHours').value = 164;
+    }
+    modal.classList.add('active');
+    setTimeout(() => document.getElementById('vacTitle').focus(), 50);
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+async function saveVacancy() {
+    const title = document.getElementById('vacTitle').value.trim();
+    if (!title) { toast('Введите название позиции'); return; }
+    const data = {
+        title,
+        open_date: document.getElementById('vacOpen').value || null,
+        close_date: document.getElementById('vacClose').value || null,
+        salary: num(document.getElementById('vacSalary').value),
+        hires: num(document.getElementById('vacHires').value),
+        norm_hours: num(document.getElementById('vacHours').value) || 164
+    };
+    const editId = document.getElementById('editId').value;
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'Сохранение...';
+    try {
+        if (editId) {
+            const { error } = await sb.from('vacancies').update(data).eq('id', editId);
+            if (error) throw error;
+            toast('Вакансия обновлена');
+        } else {
+            const emptyParticipants = {};
+            HOURLY_PARTICIPANTS.forEach(p => {
+                emptyParticipants[p.key + '_salary'] = 0;
+                emptyParticipants[p.key + '_hours'] = 0;
+            });
+            emptyParticipants[KPI_KEY] = 0;
+            const { error } = await sb.from('vacancies').insert({
+                ...data,
+                participants: emptyParticipants,
+                external: { publication:0, agency:0, referral:0, target:0, assessment:0, medical:0, other:0 }
+            });
+            if (error) throw error;
+            toast('Вакансия создана');
+        }
+        closeModal();
+        await loadVacancies();
+    } catch (err) {
+        console.error(err);
+        toast('Ошибка: ' + (err.message || String(err)));
+    } finally {
+        btn.disabled = false; btn.textContent = 'Сохранить';
+    }
+}
+function editVacancy(id) { openModal(id); }
+
+async function deleteVacancy(id) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    if (!confirm('Удалить вакансию «' + v.title + '»?')) return;
+    const { error } = await sb.from('vacancies').delete().eq('id', id);
+    if (error) { toast('Ошибка: ' + error.message); return; }
+    toast('Вакансия удалена');
+    await loadVacancies();
+}
+
+async function restoreVacancy(id) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    if (!confirm('Вернуть вакансию «' + v.title + '» в активные? Дата закрытия будет очищена.')) return;
+    const { error } = await sb.from('vacancies').update({ close_date: null }).eq('id', id);
+    if (error) { toast('Ошибка: ' + error.message); return; }
+    toast('Вакансия возвращена в активные');
+    await loadVacancies();
+}
+
+function renderSummary() {
+    // Считаем по ВСЕМ вакансиям (активные + архив)
+    const active = vacancies.length;
+    const totalHired = vacancies.reduce((s, v) => s + num(v.hires), 0);
+    const daysArr = vacancies.map(v => daysBetween(v.open_date, v.close_date)).filter(d => d > 0);
+    const avgTime = daysArr.length ? daysArr.reduce((a,b) => a+b, 0) / daysArr.length : 0;
+    const costsArr = vacancies.filter(v => calc(v).hires > 0 && calc(v).total > 0).map(v => calc(v).costPerHire);
+    const avgCost = costsArr.length ? costsArr.reduce((a,b) => a+b, 0) / costsArr.length : 0;
+
+    document.getElementById('sumVacancies').textContent = active;
+    document.getElementById('sumHired').textContent = totalHired;
+    document.getElementById('sumTime').innerHTML = Math.round(avgTime) + ' <span style="font-size:13px;color:#6b7280;">дн.</span>';
+    document.getElementById('sumCost').innerHTML = fmt(avgCost) + ' <span style="font-size:13px;color:#6b7280;">₽</span>';
+
+    // График по месяцам
+    const byMonth = {};
+    vacancies.forEach(v => {
+        // Берём месяц открытия, если нет — created_at
+        const dateStr = v.open_date || v.created_at;
+        if (!dateStr) return;
+        const d = new Date(dateStr);
+        if (isNaN(d)) return;
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        if (!byMonth[key]) byMonth[key] = 0;
+        byMonth[key] += calc(v).total;
+    });
+
+    const months = Object.keys(byMonth).sort();
+    const monthLabels = months.map(m => {
+        const [y, mo] = m.split('-');
+        const names = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+        return names[parseInt(mo) - 1] + ' ' + y.slice(2);
+    });
+    const monthData = months.map(m => byMonth[m]);
+
+    if (monthlyChart) monthlyChart.destroy();
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    monthlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Затраты за месяц, ₽',
+                data: monthData,
+                backgroundColor: '#6366f1',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => fmt(c.parsed.y) + ' ₽' } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } }
+            }
+        }
+    });
+}
+
+function csvEscape(val) {
+    const s = String(val ?? '');
+    if (s.includes(';') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+}
+function downloadCSV(filename, rows) {
+    const BOM = '\uFEFF';
+    const csv = BOM + rows.map(r => r.map(csvEscape).join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+}
+function exportData() {
+    if (vacancies.length === 0) { toast('Нет данных для экспорта'); return; }
+    const date = new Date().toISOString().slice(0,10);
+    const summaryRows = [['Статус','Название позиции','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽']];
+    vacancies.forEach(v => {
+        const m = calc(v);
+        summaryRows.push([
+            isArchived(v) ? 'Архив' : 'Активная',
+            v.title, v.open_date || '', v.close_date || '',
+            daysBetween(v.open_date, v.close_date), num(v.salary), m.hires,
+            Math.round(m.internalSum), Math.round(m.externalSum),
+            Math.round(m.total), Math.round(m.costPerHire)
+        ]);
+    });
+    downloadCSV('hr-сводка-' + date + '.csv', summaryRows);
+    setTimeout(() => {
+        const detailRows = [['Вакансия','Участник','Оклад, ₽/мес','Часы','Ставка, ₽/час','Вклад, ₽']];
+        vacancies.forEach(v => {
+            const m = calc(v);
+            m.rows.forEach(r => detailRows.push([v.title, r.label, r.salary || '', r.hours || '', r.rate > 0 ? Math.round(r.rate * 100) / 100 : '', Math.round(r.cost)]));
+            detailRows.push([v.title, 'KPI за выход кандидата', '', '', '', Math.round(m.kpi)]);
+            detailRows.push([v.title, 'ИТОГО внутренние', '', '', '', Math.round(m.internalSum)]);
+            EXTERNAL_ITEMS.forEach(item => {
+                const val = num((v.external || {})[item.key]);
+                if (val > 0) detailRows.push([v.title, 'Внешние: ' + item.label, '', '', '', Math.round(val)]);
+            });
+            detailRows.push([v.title, 'ИТОГО внешние', '', '', '', Math.round(m.externalSum)]);
+            detailRows.push(['', '', '', '', '', '']);
+        });
+        downloadCSV('hr-детализация-' + date + '.csv', detailRows);
+    }, 400);
+    toast('Экспортировано 2 файла CSV');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('active')) saveVacancy();
+    if (e.key === 'Escape') closeModal();
+});
+
+// Старт
+loadVacancies();
+subscribeRealtime();
+</script>
+</body>
+</html>
