@@ -22,21 +22,11 @@
     .btn.small { padding: 6px 12px; font-size: 12px; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Вкладки */
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
-    .tab {
-        padding: 10px 20px; font-size: 14px; font-weight: 600;
-        color: #6b7280; cursor: pointer; border: none; background: none;
-        border-bottom: 3px solid transparent; margin-bottom: -2px;
-        transition: color 0.2s, border-color 0.2s;
-    }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; flex-wrap: wrap; }
+    .tab { padding: 10px 20px; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; }
     .tab:hover { color: #4f46e5; }
     .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
-    .tab .count {
-        display: inline-block; background: #e5e7eb; color: #374151;
-        font-size: 11px; padding: 2px 7px; border-radius: 10px;
-        margin-left: 6px; font-weight: 700;
-    }
+    .tab .count { display: inline-block; background: #e5e7eb; color: #374151; font-size: 11px; padding: 2px 7px; border-radius: 10px; margin-left: 6px; font-weight: 700; }
     .tab.active .count { background: #6366f1; color: #fff; }
 
     .vacancy-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(600px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -79,11 +69,19 @@
     .kpi-box .value.good { color: #10b981; }
     .kpi-box .value.warn { color: #f59e0b; }
     .kpi-box .value.bad { color: #ef4444; }
+
     .summary-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px; }
     .summary-card h2 { font-size: 16px; margin-bottom: 16px; color: #374151; }
     .summary-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
     @media (max-width: 900px) { .summary-kpis { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 500px) { .summary-kpis { grid-template-columns: 1fr; } }
+
+    .chart-card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .chart-card h2 { font-size: 16px; margin-bottom: 8px; color: #374151; }
+    .chart-hint { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+    .chart-legend { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: 13px; color: #4b5563; flex-wrap: wrap; }
+    .chart-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+
     .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
     .empty-state h3 { color: #6b7280; margin-bottom: 8px; font-size: 18px; }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
@@ -148,7 +146,10 @@
 
     <div class="tabs">
         <button class="tab active" id="tabActive" onclick="switchTab('active')">
-            Активные <span class="count" id="countActive">0</span>
+            Вакансии <span class="count" id="countActive">0</span>
+        </button>
+        <button class="tab" id="tabCompare" onclick="switchTab('compare')">
+            📊 Сравнение
         </button>
         <button class="tab" id="tabArchive" onclick="switchTab('archive')">
             📦 Архив <span class="count" id="countArchive">0</span>
@@ -156,10 +157,24 @@
     </div>
 
     <div id="archiveHint" class="archive-hint hidden">
-        Здесь вакансии, закрытые более 4 месяцев назад. Можно вернуть в активные кнопкой «↩️ Вернуть».
+        Здесь вакансии с указанной датой закрытия. Можно вернуть в активные кнопкой «↩️ Вернуть».
     </div>
 
-    <div class="vacancy-list" id="vacancyList"></div>
+    <div id="viewActive" class="vacancy-list"></div>
+    <div id="viewArchive" class="vacancy-list hidden"></div>
+
+    <div id="viewCompare" class="hidden">
+        <div class="chart-card">
+            <h2>📊 Сравнение затрат по вакансиям</h2>
+            <p class="chart-hint">Полная стоимость найма (внутренние + внешние) по каждой вакансии</p>
+            <canvas id="compareChart" height="80"></canvas>
+            <div class="chart-legend">
+                <span><span class="dot" style="background:#6366f1;"></span>Активные</span>
+                <span><span class="dot" style="background:#9ca3af;"></span>Закрытые</span>
+                <span><span class="dot" style="background:#10b981;"></span>Много наймов (≥ 2)</span>
+            </div>
+        </div>
+    </div>
 
     <div class="empty-state" id="emptyState" style="display:none;">
         <h3>Пока нет вакансий</h3>
@@ -174,6 +189,10 @@
         <div class="input-group">
             <label>Название позиции *</label>
             <input type="text" id="vacTitle" placeholder="Например: Менеджер-SEO">
+        </div>
+        <div class="input-group">
+            <label>Отдел / направление</label>
+            <input type="text" id="vacDept" placeholder="Например: Маркетинг">
         </div>
         <div class="modal-grid">
             <div class="input-group"><label>Дата открытия</label><input type="date" id="vacOpen"></div>
@@ -202,7 +221,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 const NORM_HOURS_DEFAULT = 164;
-const ARCHIVE_MONTHS = 4; // через сколько месяцев закрытая вакансия уходит в архив
+const MANY_HIRES_THRESHOLD = 2;
 
 const HOURLY_PARTICIPANTS = [
     { key: 'recruiter', label: 'Рекрутер' },
@@ -223,6 +242,7 @@ const EXTERNAL_ITEMS = [
 
 let vacancies = [];
 let monthlyChart = null;
+let compareChart = null;
 let realtimeChannel = null;
 let saveTimers = {};
 let currentTab = 'active';
@@ -237,17 +257,7 @@ function daysBetween(open, close) {
     const diff = Math.round((d2 - d1) / (1000*60*60*24));
     return diff > 0 ? diff : 0;
 }
-function monthsBetween(dateStr) {
-    if (!dateStr) return 0;
-    const d = new Date(dateStr);
-    if (isNaN(d)) return 0;
-    const now = new Date();
-    return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
-}
-function isArchived(v) {
-    if (!v.close_date) return false;
-    return monthsBetween(v.close_date) > ARCHIVE_MONTHS;
-}
+function isArchived(v) { return !!v.close_date; }
 function toast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -327,16 +337,20 @@ function subscribeRealtime() {
 function switchTab(tab) {
     currentTab = tab;
     document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+    document.getElementById('tabCompare').classList.toggle('active', tab === 'compare');
     document.getElementById('tabArchive').classList.toggle('active', tab === 'archive');
     document.getElementById('archiveHint').classList.toggle('hidden', tab !== 'archive');
+    document.getElementById('viewActive').classList.toggle('hidden', tab !== 'active');
+    document.getElementById('viewCompare').classList.toggle('hidden', tab !== 'compare');
+    document.getElementById('viewArchive').classList.toggle('hidden', tab !== 'archive');
     render();
 }
 
 function render() {
-    const list = document.getElementById('vacancyList');
     const empty = document.getElementById('emptyState');
     const summary = document.getElementById('summaryCard');
-    list.innerHTML = '';
+    const viewActive = document.getElementById('viewActive');
+    const viewArchive = document.getElementById('viewArchive');
 
     const active = vacancies.filter(v => !isArchived(v));
     const archive = vacancies.filter(v => isArchived(v));
@@ -347,21 +361,29 @@ function render() {
     if (vacancies.length === 0) {
         empty.style.display = 'block';
         summary.style.display = 'none';
+        viewActive.innerHTML = '';
+        viewArchive.innerHTML = '';
+        if (compareChart) { compareChart.destroy(); compareChart = null; }
         return;
     }
     empty.style.display = 'none';
     summary.style.display = 'block';
 
-    const visible = currentTab === 'active' ? active : archive;
-
-    if (visible.length === 0) {
-        list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><h3>' +
-            (currentTab === 'active' ? 'Нет активных вакансий' : 'Архив пуст') +
-            '</h3><p>' + (currentTab === 'active' ? 'Все вакансии либо в архиве, либо ещё не созданы' : 'Закрытые более 4 месяцев назад появятся здесь') + '</p></div>';
+    viewActive.innerHTML = '';
+    if (active.length === 0) {
+        viewActive.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><h3>Нет активных вакансий</h3><p>Все вакансии закрыты</p></div>';
     } else {
-        visible.forEach(v => list.appendChild(renderCard(v)));
+        active.forEach(v => viewActive.appendChild(renderCard(v)));
     }
 
+    viewArchive.innerHTML = '';
+    if (archive.length === 0) {
+        viewArchive.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><h3>Архив пуст</h3><p>Вакансии с датой закрытия появятся здесь</p></div>';
+    } else {
+        archive.forEach(v => viewArchive.appendChild(renderCard(v)));
+    }
+
+    renderCompareChart();
     renderSummary();
 }
 
@@ -386,7 +408,7 @@ function renderCard(v) {
         <div class="vacancy-header">
             <div>
                 <div class="vacancy-title">${esc(v.title)}</div>
-                <div class="vacancy-meta">${v.open_date ? 'Открыта: ' + v.open_date : ''}${v.close_date ? ' · Закрыта: ' + v.close_date : ''}${days ? ' · ' + days + ' дн. в работе' : ''}</div>
+                <div class="vacancy-meta">${v.dept ? esc(v.dept) + ' · ' : ''}${v.open_date ? 'Открыта: ' + v.open_date : ''}${v.close_date ? ' · Закрыта: ' + v.close_date : ''}${days ? ' · ' + days + ' дн.' : ''}</div>
             </div>
             <div class="vacancy-actions">
                 ${archived ? `<button class="btn secondary small" onclick="restoreVacancy('${v.id}')">↩️ Вернуть</button>` : ''}
@@ -432,6 +454,56 @@ function renderCard(v) {
     return card;
 }
 
+function renderCompareChart() {
+    const ctx = document.getElementById('compareChart').getContext('2d');
+    const sorted = [...vacancies].sort((a, b) => calc(b).total - calc(a).total);
+    const labels = sorted.map(v => v.title.length > 20 ? v.title.slice(0, 18) + '…' : v.title);
+    const data = sorted.map(v => calc(v).total);
+    const colors = sorted.map(v => {
+        const m = calc(v);
+        if (m.hires >= MANY_HIRES_THRESHOLD) return '#10b981';
+        return isArchived(v) ? '#9ca3af' : '#6366f1';
+    });
+
+    if (compareChart) compareChart.destroy();
+    compareChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Полная стоимость, ₽',
+                data,
+                backgroundColor: colors,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => sorted[items[0].dataIndex].title,
+                        label: (c) => {
+                            const v = sorted[c.dataIndex];
+                            const m = calc(v);
+                            return [
+                                'Стоимость: ' + fmt(m.total) + ' ₽',
+                                'Наймов: ' + m.hires,
+                                'Статус: ' + (isArchived(v) ? 'Закрыта' : 'Активная')
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } },
+                x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: false, font: { size: 10 } } }
+            }
+        }
+    });
+}
+
 function debouncedSave(id, patch) {
     const v = vacancies.find(x => x.id === id);
     if (v) {
@@ -441,6 +513,7 @@ function debouncedSave(id, patch) {
         if (patch.hires !== undefined) v.hires = patch.hires;
         if (patch.norm_hours !== undefined) v.norm_hours = patch.norm_hours;
         if (patch.title !== undefined) v.title = patch.title;
+        if (patch.dept !== undefined) v.dept = patch.dept;
         if (patch.open_date !== undefined) v.open_date = patch.open_date;
         if (patch.close_date !== undefined) v.close_date = patch.close_date;
     }
@@ -477,6 +550,7 @@ function openModal(id) {
         if (!v) return;
         title.textContent = 'Редактировать вакансию';
         document.getElementById('vacTitle').value = v.title;
+        document.getElementById('vacDept').value = v.dept || '';
         document.getElementById('vacOpen').value = v.open_date || '';
         document.getElementById('vacClose').value = v.close_date || '';
         document.getElementById('vacSalary').value = v.salary || 0;
@@ -486,6 +560,7 @@ function openModal(id) {
     } else {
         title.textContent = 'Новая вакансия';
         document.getElementById('vacTitle').value = '';
+        document.getElementById('vacDept').value = '';
         document.getElementById('vacOpen').value = new Date().toISOString().slice(0,10);
         document.getElementById('vacClose').value = '';
         document.getElementById('vacSalary').value = 0;
@@ -502,6 +577,7 @@ async function saveVacancy() {
     if (!title) { toast('Введите название позиции'); return; }
     const data = {
         title,
+        dept: document.getElementById('vacDept').value.trim() || null,
         open_date: document.getElementById('vacOpen').value || null,
         close_date: document.getElementById('vacClose').value || null,
         salary: num(document.getElementById('vacSalary').value),
@@ -563,7 +639,6 @@ async function restoreVacancy(id) {
 }
 
 function renderSummary() {
-    // Считаем по ВСЕМ вакансиям (активные + архив)
     const active = vacancies.length;
     const totalHired = vacancies.reduce((s, v) => s + num(v.hires), 0);
     const daysArr = vacancies.map(v => daysBetween(v.open_date, v.close_date)).filter(d => d > 0);
@@ -576,10 +651,8 @@ function renderSummary() {
     document.getElementById('sumTime').innerHTML = Math.round(avgTime) + ' <span style="font-size:13px;color:#6b7280;">дн.</span>';
     document.getElementById('sumCost').innerHTML = fmt(avgCost) + ' <span style="font-size:13px;color:#6b7280;">₽</span>';
 
-    // График по месяцам
     const byMonth = {};
     vacancies.forEach(v => {
-        // Берём месяц открытия, если нет — created_at
         const dateStr = v.open_date || v.created_at;
         if (!dateStr) return;
         const d = new Date(dateStr);
@@ -588,7 +661,6 @@ function renderSummary() {
         if (!byMonth[key]) byMonth[key] = 0;
         byMonth[key] += calc(v).total;
     });
-
     const months = Object.keys(byMonth).sort();
     const monthLabels = months.map(m => {
         const [y, mo] = m.split('-');
@@ -616,9 +688,7 @@ function renderSummary() {
                 legend: { display: false },
                 tooltip: { callbacks: { label: c => fmt(c.parsed.y) + ' ₽' } }
             },
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } }
-            }
+            scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } } }
         }
     });
 }
@@ -640,12 +710,12 @@ function downloadCSV(filename, rows) {
 function exportData() {
     if (vacancies.length === 0) { toast('Нет данных для экспорта'); return; }
     const date = new Date().toISOString().slice(0,10);
-    const summaryRows = [['Статус','Название позиции','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽']];
+    const summaryRows = [['Статус','Название позиции','Отдел','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽']];
     vacancies.forEach(v => {
         const m = calc(v);
         summaryRows.push([
-            isArchived(v) ? 'Архив' : 'Активная',
-            v.title, v.open_date || '', v.close_date || '',
+            isArchived(v) ? 'Закрыта' : 'Активная',
+            v.title, v.dept || '', v.open_date || '', v.close_date || '',
             daysBetween(v.open_date, v.close_date), num(v.salary), m.hires,
             Math.round(m.internalSum), Math.round(m.externalSum),
             Math.round(m.total), Math.round(m.costPerHire)
@@ -679,7 +749,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
 });
 
-// Старт
 loadVacancies();
 subscribeRealtime();
 </script>
