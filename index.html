@@ -46,6 +46,11 @@
     .participant-table input { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; min-width: 0; }
     .participant-table input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
     .participant-table .name { font-size: 12px; color: #4b5563; padding-right: 8px; white-space: nowrap; }
+    .participant-table .name .hr-multiplier {
+        display: inline-block; background: #fef3c7; color: #92400e;
+        font-size: 10px; padding: 1px 6px; border-radius: 8px;
+        margin-left: 4px; font-weight: 700;
+    }
     .participant-table .calc { text-align: right; font-weight: 600; color: #1a1f36; white-space: nowrap; font-size: 13px; }
     .participant-table .calc small { display: block; font-weight: 400; font-size: 10px; color: #9ca3af; }
     .participant-table tr.total-row td { border-top: 1px solid #e5e7eb; padding-top: 10px; }
@@ -82,18 +87,236 @@
     .chart-legend { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: 13px; color: #4b5563; flex-wrap: wrap; }
     .chart-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
+    /* Вкладка Закрытия */
+    .closures-wrap { }
+    .analytics-card {
+        background: #fff; border-radius: 14px; padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+    }
+    .analytics-card h2 { font-size: 16px; margin-bottom: 16px; color: #374151; }
+    .analytics-kpis {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 16px; margin-bottom: 20px;
+    }
+    @media (max-width: 900px) { .analytics-kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .analytics-kpis { grid-template-columns: 1fr; } }
+    .reasons-table {
+        width: 100%; border-collapse: collapse; font-size: 13px;
+        background: #f9fafb; border-radius: 10px; overflow: hidden;
+    }
+    .reasons-table th {
+        text-align: left; padding: 10px 12px;
+        font-size: 11px; color: #6b7280; text-transform: uppercase;
+        letter-spacing: 0.3px; font-weight: 700;
+        border-bottom: 2px solid #e5e7eb; background: #fff;
+    }
+    .reasons-table td {
+        padding: 8px 12px; border-bottom: 1px solid #f3f4f6;
+        color: #1a1f36;
+    }
+    .reasons-table tr:last-child td { border-bottom: none; }
+    .reasons-table .reason-pct { color: #4f46e5; font-weight: 700; text-align: right; }
+    .reasons-table .reason-count { color: #6b7280; text-align: right; }
+
+    .closures-table-wrap {
+        background: #fff; border-radius: 14px; padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto;
+    }
+    .closures-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
+    .closures-table th {
+        background: #f9fafb; text-align: left; padding: 10px 12px;
+        font-size: 11px; color: #6b7280; text-transform: uppercase;
+        letter-spacing: 0.3px; font-weight: 700;
+        white-space: nowrap; border-bottom: 2px solid #e5e7eb;
+    }
+    .closures-table td {
+        padding: 10px 12px; border-bottom: 1px solid #f3f4f6;
+        color: #1a1f36; vertical-align: top;
+    }
+    .closures-table tr:hover td { background: #fafbfc; }
+    .closures-table .vacancy-cell {
+        font-weight: 700; color: #1a1f36; white-space: nowrap;
+    }
+    .closures-table .vacancy-dept {
+        font-weight: 400; font-size: 11px; color: #6b7280; display: block; margin-top: 2px;
+    }
+    .closures-table .no-hire-badge {
+        display: inline-block; background: #fef3c7; color: #92400e;
+        font-size: 12px; padding: 6px 12px; border-radius: 8px;
+        font-weight: 700;
+    }
+
+    .hire-view {
+        background: #f9fafb; border-radius: 8px; padding: 10px;
+        margin-bottom: 6px; border-left: 3px solid #6366f1;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 8px;
+    }
+    .hire-view .hire-view-info { flex: 1; min-width: 0; }
+    .hire-view .hire-view-name {
+        font-weight: 600; margin-bottom: 4px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hire-view .hire-view-meta {
+        font-size: 12px; color: #6b7280;
+        display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .hire-view .hire-view-meta .reason-text {
+        color: #dc2626; font-weight: 600;
+    }
+    .hire-view .hire-view-actions {
+        display: flex; gap: 4px; flex-shrink: 0;
+    }
+    .hire-view .hire-view-actions button {
+        background: none; border: 1px solid #d1d5db; border-radius: 6px;
+        padding: 4px 8px; cursor: pointer; font-size: 12px;
+        color: #4b5563; transition: all 0.15s;
+    }
+    .hire-view .hire-view-actions button:hover { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
+    .hire-view .hire-view-actions button.del:hover { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
+
+    .hire-edit {
+        background: #eef2ff; border-radius: 8px; padding: 10px;
+        margin-bottom: 6px; border: 2px dashed #c7d2fe;
+    }
+    .hire-edit .hire-edit-header {
+        display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+    }
+    .hire-edit .hire-edit-header input {
+        flex: 1; padding: 6px 8px; border: 1px solid #d1d5db;
+        border-radius: 6px; font-size: 13px;
+    }
+    .hire-edit .hire-edit-row {
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        font-size: 12px;
+    }
+    .hire-edit .hire-edit-row label {
+        color: #6b7280; margin: 0;
+    }
+    .hire-edit .hire-edit-row input[type="date"], .hire-edit .hire-edit-row select {
+        padding: 5px 8px; border: 1px solid #d1d5db;
+        border-radius: 6px; font-size: 12px; background: #fff;
+    }
+    .hire-edit .hire-edit-row input[type="text"].other-reason {
+        flex: 1; min-width: 140px;
+    }
+    .hire-edit .hire-edit-actions {
+        display: flex; gap: 6px; margin-top: 10px;
+    }
+    .hire-edit .save-btn {
+        background: #10b981; color: #fff; border: none;
+        padding: 6px 14px; border-radius: 6px; cursor: pointer;
+        font-size: 12px; font-weight: 600;
+    }
+    .hire-edit .save-btn:hover { background: #059669; }
+    .hire-edit .cancel-btn {
+        background: #e5e7eb; color: #374151; border: none;
+        padding: 6px 14px; border-radius: 6px; cursor: pointer;
+        font-size: 12px; font-weight: 600;
+    }
+    .hire-edit .cancel-btn:hover { background: #d1d5db; }
+    .offer-radio-btns {
+        display: flex; gap: 6px; align-items: center;
+    }
+    .offer-radio-btns label {
+        display: flex; align-items: center; gap: 4px; font-size: 12px;
+        cursor: pointer; padding: 4px 10px; border-radius: 6px;
+        border: 1px solid #d1d5db; background: #fff;
+    }
+    .offer-radio-btns input[type="radio"] { margin: 0; }
+    .offer-radio-btns label.accepted-checked { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .offer-radio-btns label.declined-checked { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    .closures-table .offer-badge {
+        display: inline-block; font-size: 11px; padding: 3px 8px;
+        border-radius: 10px; font-weight: 700; white-space: nowrap;
+    }
+    .closures-table .offer-accepted { background: #d1fae5; color: #065f46; }
+    .closures-table .offer-declined { background: #fee2e2; color: #991b1b; }
+    .closures-table .offer-pending { background: #e5e7eb; color: #4b5563; }
+    .closures-table .empty-hires {
+        color: #9ca3af; font-size: 12px; font-style: italic;
+    }
+    .closures-table .add-hire-btn {
+        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
+        padding: 6px 12px; border-radius: 8px; cursor: pointer;
+        font-size: 12px; font-weight: 600; margin-top: 6px;
+    }
+    .closures-table .add-hire-btn:hover { background: #eef2ff; border-color: #6366f1; }
+    .closures-table .recruiter-select {
+        padding: 6px 8px; border: 1px solid #d1d5db;
+        border-radius: 6px; font-size: 13px; background: #fff;
+    }
+
     .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
     .empty-state h3 { color: #6b7280; margin-bottom: 8px; font-size: 18px; }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.active { display: flex; }
-    .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
     .modal h3 { font-size: 18px; margin-bottom: 16px; }
     .modal .input-group { margin-bottom: 14px; }
     .modal .input-group label { display: block; font-size: 13px; color: #4b5563; margin-bottom: 4px; }
-    .modal .input-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
-    .modal .input-group input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .modal .input-group input, .modal .input-group select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: #fff; }
+    .modal .input-group input:focus, .modal .input-group select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
     .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+    .closure-section {
+        background: #eef2ff; border-radius: 10px; padding: 14px;
+        margin-bottom: 14px; border-left: 4px solid #6366f1;
+    }
+    .closure-section .closure-title {
+        font-size: 13px; font-weight: 700; color: #3730a3;
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .checkbox-row {
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 12px; font-size: 13px;
+    }
+    .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .checkbox-row label { cursor: pointer; color: #1a1f36; font-weight: 600; }
+
+    .hire-editor {
+        background: #fff; border-radius: 8px; padding: 10px;
+        margin-bottom: 8px; border: 1px solid #e0e7ff;
+    }
+    .hire-editor .hire-editor-header {
+        display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+    }
+    .hire-editor .hire-editor-header input { flex: 1; }
+    .hire-editor .hire-editor-row {
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .hire-editor .hire-editor-row label {
+        font-size: 12px; color: #6b7280; margin: 0;
+    }
+    .hire-editor .hire-editor-row input[type="date"],
+    .hire-editor .hire-editor-row input[type="text"],
+    .hire-editor .hire-editor-row select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; }
+    .hire-editor .hire-editor-row input[type="date"] { flex: 1; min-width: 130px; }
+    .hire-editor .hire-editor-row input[type="text"].other-reason { flex: 1; min-width: 140px; }
+    .hire-editor .offer-radio {
+        display: flex; gap: 8px; align-items: center;
+    }
+    .hire-editor .offer-radio label {
+        display: flex; align-items: center; gap: 4px; font-size: 13px;
+        cursor: pointer; padding: 4px 10px; border-radius: 6px;
+        border: 1px solid #d1d5db; background: #fff;
+    }
+    .hire-editor .offer-radio input[type="radio"] { margin: 0; }
+    .hire-editor .offer-radio label.accepted-checked { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .hire-editor .offer-radio label.declined-checked { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+    .hire-editor .remove-hire-btn {
+        background: none; border: none; color: #ef4444; cursor: pointer;
+        font-size: 16px; padding: 4px 8px;
+    }
+    .add-hire-modal-btn {
+        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
+        padding: 8px 14px; border-radius: 8px; cursor: pointer;
+        font-size: 13px; font-weight: 600; width: 100%;
+    }
+    .add-hire-modal-btn:hover { background: #eef2ff; border-color: #6366f1; }
+
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1a1f36; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; transition: transform 0.3s; z-index: 2000; }
     .toast.show { transform: translateX(-50%) translateY(0); }
     .loading { text-align: center; padding: 60px 20px; color: #6b7280; font-size: 15px; }
@@ -118,7 +341,7 @@
         <div>
             <h1>📊 HR Дашборд — Калькулятор стоимости найма</h1>
             <p class="subtitle">
-                Оклад ÷ норма часов × часы = вклад в вакансию.
+                Оклад ÷ норма часов × часы = вклад в вакансию. HR-администрирование × число наймов.
                 <span class="sync-badge" id="syncBadge">Готов</span>
             </p>
         </div>
@@ -151,6 +374,9 @@
         <button class="tab" id="tabCompare" onclick="switchTab('compare')">
             📊 Сравнение
         </button>
+        <button class="tab" id="tabClosures" onclick="switchTab('closures')">
+            📋 Закрытия <span class="count" id="countClosures">0</span>
+        </button>
         <button class="tab" id="tabArchive" onclick="switchTab('archive')">
             📦 Архив <span class="count" id="countArchive">0</span>
         </button>
@@ -176,6 +402,17 @@
         </div>
     </div>
 
+    <div id="viewClosures" class="closures-wrap hidden">
+        <div class="analytics-card" id="analyticsCard">
+            <h2>📊 Аналитика офферов</h2>
+            <div class="analytics-kpis" id="analyticsKpis"></div>
+            <div id="reasonsBlock"></div>
+        </div>
+        <div class="closures-table-wrap">
+            <div id="closuresTableWrap"></div>
+        </div>
+    </div>
+
     <div class="empty-state" id="emptyState" style="display:none;">
         <h3>Пока нет вакансий</h3>
         <p>Нажмите «+ Новая вакансия», чтобы начать</p>
@@ -196,13 +433,37 @@
         </div>
         <div class="modal-grid">
             <div class="input-group"><label>Дата открытия</label><input type="date" id="vacOpen"></div>
-            <div class="input-group"><label>Дата закрытия</label><input type="date" id="vacClose"></div>
+            <div class="input-group"><label>Дата закрытия</label><input type="date" id="vacClose" onchange="onCloseDateChange()"></div>
         </div>
         <div class="modal-grid">
             <div class="input-group"><label>Оклад по вакансии, ₽/мес</label><input type="number" id="vacSalary" value="0" min="0"></div>
             <div class="input-group"><label>Число наймов</label><input type="number" id="vacHires" value="1" min="0"></div>
         </div>
         <div class="input-group"><label>Норма рабочих часов в месяц</label><input type="number" id="vacHours" value="164" min="0"></div>
+
+        <div class="closure-section hidden" id="closureSection">
+            <div class="closure-title">✅ Закрытие вакансии</div>
+
+            <div class="checkbox-row">
+                <input type="checkbox" id="vacNoHire" onchange="onNoHireChange()">
+                <label for="vacNoHire">🚫 Закрыта без найма</label>
+            </div>
+
+            <div id="hiresBlock">
+                <div class="input-group">
+                    <label>Рекрутер</label>
+                    <select id="vacRecruiter">
+                        <option value="">— Не выбран —</option>
+                        <option value="Татьяна">Татьяна</option>
+                        <option value="Эльвина">Эльвина</option>
+                    </select>
+                </div>
+                <div style="font-size:13px;color:#4b5563;margin-bottom:8px;font-weight:600;">Нанятые сотрудники:</div>
+                <div id="hiresEditor"></div>
+                <button type="button" class="add-hire-modal-btn" onclick="addHireInModal()">+ Добавить сотрудника</button>
+            </div>
+        </div>
+
         <div class="modal-actions">
             <button class="btn secondary" onclick="closeModal()">Отмена</button>
             <button class="btn" onclick="saveVacancy()" id="saveBtn">Сохранить</button>
@@ -222,12 +483,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 const NORM_HOURS_DEFAULT = 164;
 const MANY_HIRES_THRESHOLD = 2;
+const RECRUITERS = ['Татьяна', 'Эльвина'];
+const DECLINE_REASONS = ['Зарплата', 'Условия работы', 'Другой оффер', 'Оформление', 'Личные причины', 'Другое'];
 
 const HOURLY_PARTICIPANTS = [
-    { key: 'recruiter', label: 'Рекрутер' },
-    { key: 'manager', label: 'Нанимающий менеджер' },
-    { key: 'interviewers', label: 'Интервьюеры / эксперты' },
-    { key: 'hrAdmin', label: 'HR-администрирование' }
+    { key: 'recruiter', label: 'Рекрутер', multiplyByHires: false },
+    { key: 'manager', label: 'Нанимающий менеджер', multiplyByHires: false },
+    { key: 'interviewers', label: 'Интервьюеры / эксперты', multiplyByHires: false },
+    { key: 'hrAdmin', label: 'HR-администрирование', multiplyByHires: true }
 ];
 const KPI_KEY = 'kpi';
 const EXTERNAL_ITEMS = [
@@ -246,6 +509,9 @@ let compareChart = null;
 let realtimeChannel = null;
 let saveTimers = {};
 let currentTab = 'active';
+let modalHires = [];
+let hireDrafts = {};
+let activeEditKey = null;
 
 function num(v) { return Math.max(0, Number(v) || 0); }
 function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
@@ -276,30 +542,34 @@ function showError(title, message, details) {
     el.classList.remove('hidden');
     el.innerHTML = '<div class="error-box"><h3>⚠️ ' + esc(title) + '</h3><p>' + message + '</p>' +
         (details ? '<p style="font-size:12px;color:#9ca3af;margin-top:12px;">Деталь: <code>' + esc(details) + '</code></p>' : '') +
-        '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипт выполнен в Supabase и RLS-политики разрешают чтение.</p></div>';
+        '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипт выполнен в Supabase.</p></div>';
 }
 
 function calc(v) {
     const p = v.participants || {};
     const normHours = num(v.norm_hours) || NORM_HOURS_DEFAULT;
+    const hiresCount = num(v.hires);
     let internalSum = 0;
     const rows = [];
     HOURLY_PARTICIPANTS.forEach(item => {
         const salary = num(p[item.key + '_salary']);
         const hours = num(p[item.key + '_hours']);
         const rate = salary / normHours;
-        const cost = rate * hours;
+        const baseCost = rate * hours;
+        const cost = item.multiplyByHires ? baseCost * hiresCount : baseCost;
         internalSum += cost;
-        rows.push({ key: item.key, label: item.label, salary, hours, rate, cost });
+        rows.push({
+            key: item.key, label: item.label, salary, hours, rate,
+            cost, multiplyByHires: item.multiplyByHires, hiresCount
+        });
     });
     const kpi = num(p[KPI_KEY]);
     internalSum += kpi;
     const ext = v.external || {};
     const externalSum = EXTERNAL_ITEMS.reduce((s, i) => s + num(ext[i.key]), 0);
     const total = internalSum + externalSum;
-    const hires = num(v.hires);
-    const costPerHire = hires > 0 ? total / hires : 0;
-    return { rows, kpi, internalSum, externalSum, total, hires, costPerHire, normHours };
+    const costPerHire = hiresCount > 0 ? total / hiresCount : 0;
+    return { rows, kpi, internalSum, externalSum, total, hires: hiresCount, costPerHire, normHours };
 }
 
 async function loadVacancies() {
@@ -315,7 +585,7 @@ async function loadVacancies() {
     } catch (err) {
         console.error('Ошибка загрузки:', err);
         setSync('error');
-        showError('Не удалось загрузить данные', 'Проверьте подключение к Supabase и настройки таблицы.', err.message || String(err));
+        showError('Не удалось загрузить данные', 'Проверьте подключение к Supabase.', err.message || String(err));
     }
 }
 
@@ -336,12 +606,14 @@ function subscribeRealtime() {
 
 function switchTab(tab) {
     currentTab = tab;
-    document.getElementById('tabActive').classList.toggle('active', tab === 'active');
-    document.getElementById('tabCompare').classList.toggle('active', tab === 'compare');
-    document.getElementById('tabArchive').classList.toggle('active', tab === 'archive');
+    ['active', 'compare', 'closures', 'archive'].forEach(t => {
+        const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (tabEl) tabEl.classList.toggle('active', t === tab);
+    });
     document.getElementById('archiveHint').classList.toggle('hidden', tab !== 'archive');
     document.getElementById('viewActive').classList.toggle('hidden', tab !== 'active');
     document.getElementById('viewCompare').classList.toggle('hidden', tab !== 'compare');
+    document.getElementById('viewClosures').classList.toggle('hidden', tab !== 'closures');
     document.getElementById('viewArchive').classList.toggle('hidden', tab !== 'archive');
     render();
 }
@@ -357,6 +629,7 @@ function render() {
 
     document.getElementById('countActive').textContent = active.length;
     document.getElementById('countArchive').textContent = archive.length;
+    document.getElementById('countClosures').textContent = archive.length;
 
     if (vacancies.length === 0) {
         empty.style.display = 'block';
@@ -383,6 +656,7 @@ function render() {
         archive.forEach(v => viewArchive.appendChild(renderCard(v)));
     }
 
+    renderClosuresTab();
     renderCompareChart();
     renderSummary();
 }
@@ -397,7 +671,7 @@ function renderCard(v) {
 
     const participantRows = m.rows.map(r => `
         <tr>
-            <td class="name">${r.label}</td>
+            <td class="name">${r.label}${r.multiplyByHires ? '<span class="hr-multiplier">× ' + r.hiresCount + '</span>' : ''}</td>
             <td><input type="number" min="0" placeholder="оклад" value="${r.salary || ''}" onchange="updateParticipant('${v.id}', '${r.key}_salary', this.value)"></td>
             <td><input type="number" min="0" placeholder="часы" value="${r.hours || ''}" onchange="updateParticipant('${v.id}', '${r.key}_hours', this.value)"></td>
             <td class="calc">${fmt(r.cost)} ₽<small>${r.rate > 0 ? fmt(r.rate) + ' ₽/ч' : ''}</small></td>
@@ -454,97 +728,395 @@ function renderCard(v) {
     return card;
 }
 
-function renderCompareChart() {
-    const ctx = document.getElementById('compareChart').getContext('2d');
-    const sorted = [...vacancies].sort((a, b) => calc(b).total - calc(a).total);
-    const labels = sorted.map(v => v.title.length > 20 ? v.title.slice(0, 18) + '…' : v.title);
-    const data = sorted.map(v => calc(v).total);
-    const colors = sorted.map(v => {
-        const m = calc(v);
-        if (m.hires >= MANY_HIRES_THRESHOLD) return '#10b981';
-        return isArchived(v) ? '#9ca3af' : '#6366f1';
-    });
+/* ===== Вкладка Закрытия ===== */
+function renderClosuresTab() {
+    renderAnalytics();
+    renderClosuresTable();
+}
 
-    if (compareChart) compareChart.destroy();
-    compareChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Полная стоимость, ₽',
-                data,
-                backgroundColor: colors,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        title: (items) => sorted[items[0].dataIndex].title,
-                        label: (c) => {
-                            const v = sorted[c.dataIndex];
-                            const m = calc(v);
-                            return [
-                                'Стоимость: ' + fmt(m.total) + ' ₽',
-                                'Наймов: ' + m.hires,
-                                'Статус: ' + (isArchived(v) ? 'Закрыта' : 'Активная')
-                            ];
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } },
-                x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: false, font: { size: 10 } } }
+function renderAnalytics() {
+    const closed = vacancies.filter(v => isArchived(v));
+    const withHire = closed.filter(v => !v.closed_no_hire);
+    const noHire = closed.filter(v => v.closed_no_hire);
+
+    let totalOffers = 0, accepted = 0, declined = 0;
+    const reasonCounts = {};
+    DECLINE_REASONS.forEach(r => reasonCounts[r] = 0);
+
+    closed.forEach(v => {
+        const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
+        hires.forEach(h => {
+            if (h.offer === 'accepted') { totalOffers++; accepted++; }
+            else if (h.offer === 'declined') {
+                totalOffers++; declined++;
+                const reason = h.decline_reason || 'Другое';
+                if (reasonCounts[reason] === undefined) reasonCounts['Другое']++;
+                else reasonCounts[reason]++;
             }
-        }
+        });
     });
+
+    const acceptPct = totalOffers > 0 ? Math.round((accepted / totalOffers) * 100) : 0;
+    const declinePct = totalOffers > 0 ? Math.round((declined / totalOffers) * 100) : 0;
+
+    const kpisHtml = `
+        <div class="kpi-box">
+            <div class="label">Всего закрытых</div>
+            <div class="value">${closed.length}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:4px;">с наймом: ${withHire.length} · без найма: ${noHire.length}</div>
+        </div>
+        <div class="kpi-box green">
+            <div class="label">✅ Приняли оффер</div>
+            <div class="value">${accepted} <span style="font-size:13px;color:#6b7280;">(${acceptPct}%)</span></div>
+        </div>
+        <div class="kpi-box red">
+            <div class="label">❌ Отказались</div>
+            <div class="value">${declined} <span style="font-size:13px;color:#6b7280;">(${declinePct}%)</span></div>
+        </div>
+        <div class="kpi-box orange">
+            <div class="label">🚫 Без найма</div>
+            <div class="value">${noHire.length}</div>
+        </div>
+    `;
+    document.getElementById('analyticsKpis').innerHTML = kpisHtml;
+
+    // Таблица причин
+    const reasonsHtml = declined > 0 ? `
+        <table class="reasons-table">
+            <thead><tr>
+                <th>Причина отказа</th>
+                <th style="text-align:right;">Кол-во</th>
+                <th style="text-align:right;">Доля</th>
+            </tr></thead>
+            <tbody>
+                ${DECLINE_REASONS.map(reason => {
+                    const count = reasonCounts[reason] || 0;
+                    if (count === 0) return '';
+                    const pct = Math.round((count / declined) * 100);
+                    return `<tr>
+                        <td>${esc(reason)}</td>
+                        <td class="reason-count">${count}</td>
+                        <td class="reason-pct">${pct}%</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    ` : '<div style="font-size:13px;color:#9ca3af;font-style:italic;">Отказов пока нет</div>';
+    document.getElementById('reasonsBlock').innerHTML = reasonsHtml;
 }
 
-function debouncedSave(id, patch) {
-    const v = vacancies.find(x => x.id === id);
-    if (v) {
-        if (patch.participants) v.participants = { ...v.participants, ...patch.participants };
-        if (patch.external) v.external = { ...v.external, ...patch.external };
-        if (patch.salary !== undefined) v.salary = patch.salary;
-        if (patch.hires !== undefined) v.hires = patch.hires;
-        if (patch.norm_hours !== undefined) v.norm_hours = patch.norm_hours;
-        if (patch.title !== undefined) v.title = patch.title;
-        if (patch.dept !== undefined) v.dept = patch.dept;
-        if (patch.open_date !== undefined) v.open_date = patch.open_date;
-        if (patch.close_date !== undefined) v.close_date = patch.close_date;
+function renderClosuresTable() {
+    const wrap = document.getElementById('closuresTableWrap');
+    const closed = vacancies.filter(v => isArchived(v)).sort((a, b) => (b.close_date || '').localeCompare(a.close_date || ''));
+
+    if (closed.length === 0) {
+        wrap.innerHTML = '<div class="empty-state"><h3>Закрытых вакансий пока нет</h3><p>Они появятся здесь, когда вы укажете дату закрытия</p></div>';
+        return;
     }
-    render();
-    if (saveTimers[id]) clearTimeout(saveTimers[id]);
+
+    let html = '<table class="closures-table"><thead><tr>';
+    html += '<th>Вакансия</th>';
+    html += '<th>Закрыта</th>';
+    html += '<th>Рекрутер</th>';
+    html += '<th>Нанятые сотрудники</th>';
+    html += '</tr></thead><tbody>';
+
+    closed.forEach(v => {
+        const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
+        html += '<tr data-vacancy-id="' + v.id + '">';
+        html += '<td class="vacancy-cell">' + esc(v.title) + (v.dept ? '<span class="vacancy-dept">' + esc(v.dept) + '</span>' : '') + '</td>';
+        html += '<td>' + (v.close_date || '—') + '</td>';
+        html += '<td>' + (v.closed_no_hire ? '—' : renderRecruiterSelect(v)) + '</td>';
+        html += '<td>' + (v.closed_no_hire ? '<span class="no-hire-badge">🚫 Закрыта без найма</span>' : renderHiresCell(v, hires)) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+}
+
+function renderRecruiterSelect(v) {
+    const current = v.recruiter_name || '';
+    let html = '<select class="recruiter-select" onchange="updateRecruiter(\'' + v.id + '\', this.value)">';
+    html += '<option value=""' + (current === '' ? ' selected' : '') + '>— Не выбран —</option>';
+    RECRUITERS.forEach(r => {
+        html += '<option value="' + esc(r) + '"' + (current === r ? ' selected' : '') + '>' + esc(r) + '</option>';
+    });
+    html += '</select>';
+    return html;
+}
+
+function renderHiresCell(v, hires) {
+    let html = '';
+    hires.forEach((h, i) => {
+        const editKey = v.id + ':' + i;
+        if (activeEditKey === editKey) html += renderHireEdit(v, h, i);
+        else html += renderHireView(v, h, i);
+    });
+    html += '<button class="add-hire-btn" onclick="addHireInTable(\'' + v.id + '\')">+ Добавить сотрудника</button>';
+    return html;
+}
+
+function renderHireView(v, h, i) {
+    const offerClass = h.offer === 'accepted' ? 'offer-accepted' : h.offer === 'declined' ? 'offer-declined' : 'offer-pending';
+    const offerText = h.offer === 'accepted' ? '✅ Принял' : h.offer === 'declined' ? '❌ Не принял' : '⏳ Не указано';
+    const displayName = h.name || '— без имени —';
+    const displayDate = h.exit_date ? formatDate(h.exit_date) : '—';
+    const reasonText = (h.offer === 'declined' && h.decline_reason)
+        ? '<span class="reason-text">Причина: ' + esc(h.decline_reason) + (h.decline_reason === 'Другое' && h.decline_reason_other ? ' (' + esc(h.decline_reason_other) + ')' : '') + '</span>'
+        : '';
+    return `
+        <div class="hire-view">
+            <div class="hire-view-info">
+                <div class="hire-view-name">👤 ${esc(displayName)}</div>
+                <div class="hire-view-meta">
+                    <span>Выход: ${displayDate}</span>
+                    <span class="offer-badge ${offerClass}">${offerText}</span>
+                    ${reasonText}
+                </div>
+            </div>
+            <div class="hire-view-actions">
+                <button onclick="startEditHire('${v.id}', ${i})" title="Редактировать">✏️</button>
+                <button class="del" onclick="removeHire('${v.id}', ${i})" title="Удалить">🗑️</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderHireEdit(v, h, i) {
+    const acceptedChecked = h.offer === 'accepted';
+    const declinedChecked = h.offer === 'declined';
+    const isDeclined = h.offer === 'declined';
+    const currentReason = h.decline_reason || '';
+    const showOther = currentReason === 'Другое';
+    return `
+        <div class="hire-edit">
+            <div class="hire-edit-header">
+                <input type="text" placeholder="Имя сотрудника" value="${esc(h.name || '')}"
+                    oninput="setDraftField('${v.id}', ${i}, 'name', this.value)">
+            </div>
+            <div class="hire-edit-row" style="margin-bottom:8px;">
+                <label>Выход:</label>
+                <input type="date" value="${h.exit_date || ''}"
+                    oninput="setDraftField('${v.id}', ${i}, 'exit_date', this.value)">
+            </div>
+            <div class="hire-edit-row">
+                <label>Оффер:</label>
+                <div class="offer-radio-btns">
+                    <label class="${acceptedChecked ? 'accepted-checked' : ''}">
+                        <input type="radio" name="offer_${v.id}_${i}" value="accepted" ${acceptedChecked ? 'checked' : ''}
+                            onchange="setDraftField('${v.id}', ${i}, 'offer', 'accepted'); setDraftField('${v.id}', ${i}, 'decline_reason', ''); renderClosuresTable();">
+                        ✅ Принял
+                    </label>
+                    <label class="${declinedChecked ? 'declined-checked' : ''}">
+                        <input type="radio" name="offer_${v.id}_${i}" value="declined" ${declinedChecked ? 'checked' : ''}
+                            onchange="setDraftField('${v.id}', ${i}, 'offer', 'declined'); renderClosuresTable();">
+                        ❌ Не принял
+                    </label>
+                </div>
+            </div>
+            ${isDeclined ? `
+            <div class="hire-edit-row" style="margin-top:8px;">
+                <label>Причина:</label>
+                <select onchange="setDraftField('${v.id}', ${i}, 'decline_reason', this.value); renderClosuresTable();">
+                    <option value="">— Выберите —</option>
+                    ${DECLINE_REASONS.map(r => '<option value="' + esc(r) + '"' + (currentReason === r ? ' selected' : '') + '>' + esc(r) + '</option>').join('')}
+                </select>
+                ${showOther ? `
+                    <input type="text" class="other-reason" placeholder="Уточните причину"
+                        value="${esc(h.decline_reason_other || '')}"
+                        oninput="setDraftField('${v.id}', ${i}, 'decline_reason_other', this.value)">
+                ` : ''}
+            </div>
+            ` : ''}
+            <div class="hire-edit-actions">
+                <button class="save-btn" onclick="saveHire('${v.id}', ${i})">💾 Сохранить</button>
+                <button class="cancel-btn" onclick="cancelEditHire('${v.id}')">Отмена</button>
+            </div>
+        </div>
+    `;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return parts[2] + '.' + parts[1] + '.' + parts[0];
+}
+
+function startEditHire(vacancyId, index) {
+    activeEditKey = vacancyId + ':' + index;
+    const v = vacancies.find(x => x.id === vacancyId);
+    if (!v) return;
+    const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
+    const h = hires[index] || { name: '', exit_date: '', offer: '', decline_reason: '', decline_reason_other: '' };
+    if (!hireDrafts[vacancyId]) hireDrafts[vacancyId] = {};
+    hireDrafts[vacancyId][index] = { ...h };
+    renderClosuresTable();
+}
+
+function setDraftField(vacancyId, index, field, value) {
+    if (!hireDrafts[vacancyId]) hireDrafts[vacancyId] = {};
+    if (!hireDrafts[vacancyId][index]) hireDrafts[vacancyId][index] = { name: '', exit_date: '', offer: '', decline_reason: '', decline_reason_other: '' };
+    hireDrafts[vacancyId][index][field] = value;
+}
+
+async function saveHire(vacancyId, index) {
+    const v = vacancies.find(x => x.id === vacancyId);
+    if (!v) return;
+    const draft = (hireDrafts[vacancyId] || {})[index] || {};
+    const hires = Array.isArray(v.hires_data) ? [...v.hires_data] : [];
+    while (hires.length <= index) hires.push({});
+    hires[index] = {
+        name: (draft.name || '').trim(),
+        exit_date: draft.exit_date || '',
+        offer: draft.offer || '',
+        decline_reason: draft.offer === 'declined' ? (draft.decline_reason || '') : '',
+        decline_reason_other: draft.offer === 'declined' && draft.decline_reason === 'Другое' ? (draft.decline_reason_other || '') : ''
+    };
     setSync('syncing');
-    saveTimers[id] = setTimeout(async () => {
-        const { error } = await sb.from('vacancies').update(patch).eq('id', id);
-        if (error) { setSync('error'); toast('Ошибка сохранения: ' + error.message); }
-        else { setSync('ok'); }
-    }, 600);
+    const { error } = await sb.from('vacancies').update({ hires_data: hires }).eq('id', vacancyId);
+    if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+    v.hires_data = hires;
+    activeEditKey = null;
+    delete hireDrafts[vacancyId];
+    setSync('ok');
+    toast('Сотрудник сохранён');
+    render();
 }
-function updateParticipant(id, key, value) {
+
+function cancelEditHire(vacancyId) {
+    activeEditKey = null;
+    delete hireDrafts[vacancyId];
+    renderClosuresTable();
+}
+
+async function addHireInTable(vacancyId) {
+    const v = vacancies.find(x => x.id === vacancyId);
+    if (!v) return;
+    const hires = Array.isArray(v.hires_data) ? [...v.hires_data] : [];
+    const newIndex = hires.length;
+    hires.push({ name: '', exit_date: '', offer: '', decline_reason: '', decline_reason_other: '' });
+    v.hires_data = hires;
+    activeEditKey = vacancyId + ':' + newIndex;
+    if (!hireDrafts[vacancyId]) hireDrafts[vacancyId] = {};
+    hireDrafts[vacancyId][newIndex] = { name: '', exit_date: '', offer: '', decline_reason: '', decline_reason_other: '' };
+    renderClosuresTable();
+}
+
+async function updateRecruiter(id, value) {
     const v = vacancies.find(x => x.id === id);
     if (!v) return;
-    const participants = { ...(v.participants || {}) };
-    participants[key] = num(value);
-    debouncedSave(id, { participants });
+    v.recruiter_name = value || null;
+    setSync('syncing');
+    const { error } = await sb.from('vacancies').update({ recruiter_name: value || null }).eq('id', id);
+    if (error) { setSync('error'); toast('Ошибка: ' + error.message); }
+    else { setSync('ok'); toast('Рекрутер обновлён'); }
 }
-function updateExternal(id, key, value) {
-    const v = vacancies.find(x => x.id === id);
+
+async function removeHire(vacancyId, index) {
+    const v = vacancies.find(x => x.id === vacancyId);
     if (!v) return;
-    const external = { ...(v.external || {}) };
-    external[key] = num(value);
-    debouncedSave(id, { external });
+    const hires = Array.isArray(v.hires_data) ? [...v.hires_data] : [];
+    if (!hires[index]) return;
+    if (!confirm('Удалить сотрудника «' + (hires[index].name || 'без имени') + '»?')) return;
+    hires.splice(index, 1);
+    v.hires_data = hires;
+    activeEditKey = null;
+    delete hireDrafts[vacancyId];
+    setSync('syncing');
+    const { error } = await sb.from('vacancies').update({ hires_data: hires }).eq('id', vacancyId);
+    if (error) { setSync('error'); toast('Ошибка: ' + error.message); }
+    else { setSync('ok'); toast('Сотрудник удалён'); render(); }
+}
+
+/* ===== Модалка ===== */
+function onCloseDateChange() {
+    const closeDate = document.getElementById('vacClose').value;
+    const section = document.getElementById('closureSection');
+    if (closeDate) section.classList.remove('hidden');
+    else section.classList.add('hidden');
+}
+
+function onNoHireChange() {
+    const noHire = document.getElementById('vacNoHire').checked;
+    const hiresBlock = document.getElementById('hiresBlock');
+    if (noHire) hiresBlock.classList.add('hidden');
+    else hiresBlock.classList.remove('hidden');
+}
+
+function renderModalHires() {
+    const wrap = document.getElementById('hiresEditor');
+    if (modalHires.length === 0) {
+        wrap.innerHTML = '<div style="font-size:12px;color:#9ca3af;font-style:italic;margin-bottom:8px;">Пока нет сотрудников. Нажмите «+ Добавить сотрудника».</div>';
+        return;
+    }
+    wrap.innerHTML = modalHires.map((h, i) => {
+        const acceptedChecked = h.offer === 'accepted';
+        const declinedChecked = h.offer === 'declined';
+        const isDeclined = h.offer === 'declined';
+        const currentReason = h.decline_reason || '';
+        const showOther = currentReason === 'Другое';
+        return `
+            <div class="hire-editor">
+                <div class="hire-editor-header">
+                    <input type="text" placeholder="Имя сотрудника" value="${esc(h.name || '')}"
+                        onchange="modalHires[${i}].name = this.value">
+                    <button type="button" class="remove-hire-btn" onclick="removeHireInModal(${i})" title="Удалить">🗑️</button>
+                </div>
+                <div class="hire-editor-row">
+                    <label>Выход:</label>
+                    <input type="date" value="${h.exit_date || ''}" onchange="modalHires[${i}].exit_date = this.value">
+                </div>
+                <div class="hire-editor-row" style="margin-top:8px;">
+                    <label>Оффер:</label>
+                    <div class="offer-radio">
+                        <label class="${acceptedChecked ? 'accepted-checked' : ''}">
+                            <input type="radio" name="offer_m_${i}" value="accepted" ${acceptedChecked ? 'checked' : ''}
+                                onchange="modalHires[${i}].offer = 'accepted'; modalHires[${i}].decline_reason = ''; renderModalHires();">
+                            ✅ Принял
+                        </label>
+                        <label class="${declinedChecked ? 'declined-checked' : ''}">
+                            <input type="radio" name="offer_m_${i}" value="declined" ${declinedChecked ? 'checked' : ''}
+                                onchange="modalHires[${i}].offer = 'declined'; renderModalHires();">
+                            ❌ Не принял
+                        </label>
+                    </div>
+                </div>
+                ${isDeclined ? `
+                <div class="hire-editor-row" style="margin-top:8px;">
+                    <label>Причина:</label>
+                    <select onchange="modalHires[${i}].decline_reason = this.value; renderModalHires();">
+                        <option value="">— Выберите —</option>
+                        ${DECLINE_REASONS.map(r => '<option value="' + esc(r) + '"' + (currentReason === r ? ' selected' : '') + '>' + esc(r) + '</option>').join('')}
+                    </select>
+                    ${showOther ? `
+                        <input type="text" class="other-reason" placeholder="Уточните причину"
+                            value="${esc(h.decline_reason_other || '')}"
+                            oninput="modalHires[${i}].decline_reason_other = this.value">
+                    ` : ''}
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function addHireInModal() {
+    modalHires.push({ name: '', exit_date: '', offer: '', decline_reason: '', decline_reason_other: '' });
+    renderModalHires();
+}
+
+function removeHireInModal(index) {
+    modalHires.splice(index, 1);
+    renderModalHires();
 }
 
 function openModal(id) {
     const modal = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
     document.getElementById('editId').value = '';
+    modalHires = [];
     if (id) {
         const v = vacancies.find(x => x.id === id);
         if (!v) return;
@@ -556,6 +1128,9 @@ function openModal(id) {
         document.getElementById('vacSalary').value = v.salary || 0;
         document.getElementById('vacHires').value = v.hires || 1;
         document.getElementById('vacHours').value = v.norm_hours || 164;
+        document.getElementById('vacRecruiter').value = v.recruiter_name || '';
+        document.getElementById('vacNoHire').checked = !!v.closed_no_hire;
+        modalHires = Array.isArray(v.hires_data) ? v.hires_data.map(h => ({...h})) : [];
         document.getElementById('editId').value = id;
     } else {
         title.textContent = 'Новая вакансия';
@@ -566,7 +1141,12 @@ function openModal(id) {
         document.getElementById('vacSalary').value = 0;
         document.getElementById('vacHires').value = 1;
         document.getElementById('vacHours').value = 164;
+        document.getElementById('vacRecruiter').value = '';
+        document.getElementById('vacNoHire').checked = false;
     }
+    onCloseDateChange();
+    onNoHireChange();
+    renderModalHires();
     modal.classList.add('active');
     setTimeout(() => document.getElementById('vacTitle').focus(), 50);
 }
@@ -575,15 +1155,36 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 async function saveVacancy() {
     const title = document.getElementById('vacTitle').value.trim();
     if (!title) { toast('Введите название позиции'); return; }
+    const closeDate = document.getElementById('vacClose').value || null;
+    const noHire = document.getElementById('vacNoHire').checked;
+    const recruiterName = document.getElementById('vacRecruiter').value || null;
+
+    let cleanHires = [];
+    if (!noHire) {
+        cleanHires = modalHires
+            .filter(h => (h.name || '').trim() || h.exit_date || h.offer)
+            .map(h => ({
+                name: (h.name || '').trim(),
+                exit_date: h.exit_date || '',
+                offer: h.offer || '',
+                decline_reason: h.offer === 'declined' ? (h.decline_reason || '') : '',
+                decline_reason_other: h.offer === 'declined' && h.decline_reason === 'Другое' ? (h.decline_reason_other || '') : ''
+            }));
+    }
+
     const data = {
         title,
         dept: document.getElementById('vacDept').value.trim() || null,
         open_date: document.getElementById('vacOpen').value || null,
-        close_date: document.getElementById('vacClose').value || null,
+        close_date: closeDate,
         salary: num(document.getElementById('vacSalary').value),
         hires: num(document.getElementById('vacHires').value),
-        norm_hours: num(document.getElementById('vacHours').value) || 164
+        norm_hours: num(document.getElementById('vacHours').value) || 164,
+        recruiter_name: closeDate && !noHire ? recruiterName : null,
+        hires_data: closeDate && !noHire ? cleanHires : [],
+        closed_no_hire: closeDate ? noHire : false
     };
+
     const editId = document.getElementById('editId').value;
     const btn = document.getElementById('saveBtn');
     btn.disabled = true; btn.textContent = 'Сохранение...';
@@ -636,6 +1237,89 @@ async function restoreVacancy(id) {
     if (error) { toast('Ошибка: ' + error.message); return; }
     toast('Вакансия возвращена в активные');
     await loadVacancies();
+}
+
+function debouncedSave(id, patch) {
+    const v = vacancies.find(x => x.id === id);
+    if (v) {
+        if (patch.participants) v.participants = { ...v.participants, ...patch.participants };
+        if (patch.external) v.external = { ...v.external, ...patch.external };
+        if (patch.salary !== undefined) v.salary = patch.salary;
+        if (patch.hires !== undefined) v.hires = patch.hires;
+        if (patch.norm_hours !== undefined) v.norm_hours = patch.norm_hours;
+    }
+    render();
+    if (saveTimers[id]) clearTimeout(saveTimers[id]);
+    setSync('syncing');
+    saveTimers[id] = setTimeout(async () => {
+        const { error } = await sb.from('vacancies').update(patch).eq('id', id);
+        if (error) { setSync('error'); toast('Ошибка сохранения: ' + error.message); }
+        else { setSync('ok'); }
+    }, 600);
+}
+function updateParticipant(id, key, value) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    const participants = { ...(v.participants || {}) };
+    participants[key] = num(value);
+    debouncedSave(id, { participants });
+}
+function updateExternal(id, key, value) {
+    const v = vacancies.find(x => x.id === id);
+    if (!v) return;
+    const external = { ...(v.external || {}) };
+    external[key] = num(value);
+    debouncedSave(id, { external });
+}
+
+function renderCompareChart() {
+    const ctx = document.getElementById('compareChart').getContext('2d');
+    const sorted = [...vacancies].sort((a, b) => calc(b).total - calc(a).total);
+    const labels = sorted.map(v => v.title.length > 20 ? v.title.slice(0, 18) + '…' : v.title);
+    const data = sorted.map(v => calc(v).total);
+    const colors = sorted.map(v => {
+        const m = calc(v);
+        if (m.hires >= MANY_HIRES_THRESHOLD) return '#10b981';
+        return isArchived(v) ? '#9ca3af' : '#6366f1';
+    });
+
+    if (compareChart) compareChart.destroy();
+    compareChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Полная стоимость, ₽',
+                data,
+                backgroundColor: colors,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => sorted[items[0].dataIndex].title,
+                        label: (c) => {
+                            const v = sorted[c.dataIndex];
+                            const m = calc(v);
+                            return [
+                                'Стоимость: ' + fmt(m.total) + ' ₽',
+                                'Наймов: ' + m.hires,
+                                'Статус: ' + (isArchived(v) ? 'Закрыта' : 'Активная')
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => fmt(v) + ' ₽' } },
+                x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: false, font: { size: 10 } } }
+            }
+        }
+    });
 }
 
 function renderSummary() {
@@ -710,15 +1394,25 @@ function downloadCSV(filename, rows) {
 function exportData() {
     if (vacancies.length === 0) { toast('Нет данных для экспорта'); return; }
     const date = new Date().toISOString().slice(0,10);
-    const summaryRows = [['Статус','Название позиции','Отдел','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽']];
+    const summaryRows = [['Статус','Без найма','Название позиции','Отдел','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽','Рекрутер','Нанятые сотрудники']];
     vacancies.forEach(v => {
         const m = calc(v);
+        const hiresStr = (Array.isArray(v.hires_data) ? v.hires_data : []).map(h => {
+            let s = (h.name || '—') + ' / ' + (h.exit_date || '—') + ' / ' +
+                (h.offer === 'accepted' ? 'Принял' : h.offer === 'declined' ? 'Не принял' : '—');
+            if (h.offer === 'declined' && h.decline_reason) {
+                s += ' (' + h.decline_reason + (h.decline_reason === 'Другое' && h.decline_reason_other ? ': ' + h.decline_reason_other : '') + ')';
+            }
+            return s;
+        }).join('; ');
         summaryRows.push([
             isArchived(v) ? 'Закрыта' : 'Активная',
+            v.closed_no_hire ? 'Да' : 'Нет',
             v.title, v.dept || '', v.open_date || '', v.close_date || '',
             daysBetween(v.open_date, v.close_date), num(v.salary), m.hires,
             Math.round(m.internalSum), Math.round(m.externalSum),
-            Math.round(m.total), Math.round(m.costPerHire)
+            Math.round(m.total), Math.round(m.costPerHire),
+            v.recruiter_name || '', hiresStr
         ]);
     });
     downloadCSV('hr-сводка-' + date + '.csv', summaryRows);
@@ -726,7 +1420,7 @@ function exportData() {
         const detailRows = [['Вакансия','Участник','Оклад, ₽/мес','Часы','Ставка, ₽/час','Вклад, ₽']];
         vacancies.forEach(v => {
             const m = calc(v);
-            m.rows.forEach(r => detailRows.push([v.title, r.label, r.salary || '', r.hours || '', r.rate > 0 ? Math.round(r.rate * 100) / 100 : '', Math.round(r.cost)]));
+            m.rows.forEach(r => detailRows.push([v.title, r.label + (r.multiplyByHires ? ' (× ' + r.hiresCount + ')' : ''), r.salary || '', r.hours || '', r.rate > 0 ? Math.round(r.rate * 100) / 100 : '', Math.round(r.cost)]));
             detailRows.push([v.title, 'KPI за выход кандидата', '', '', '', Math.round(m.kpi)]);
             detailRows.push([v.title, 'ИТОГО внутренние', '', '', '', Math.round(m.internalSum)]);
             EXTERNAL_ITEMS.forEach(item => {
@@ -745,7 +1439,6 @@ document.getElementById('modalOverlay').addEventListener('click', (e) => {
     if (e.target.id === 'modalOverlay') closeModal();
 });
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('active')) saveVacancy();
     if (e.key === 'Escape') closeModal();
 });
 
