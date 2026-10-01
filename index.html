@@ -37,6 +37,15 @@
     .vacancy-title { font-size: 17px; font-weight: 700; word-break: break-word; }
     .vacancy-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
     .vacancy-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+
+    .hires-progress {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #fef3c7; color: #92400e;
+        font-size: 12px; padding: 4px 10px; border-radius: 10px;
+        font-weight: 700; margin-top: 6px;
+    }
+    .hires-progress.complete { background: #d1fae5; color: #065f46; }
+
     .section { background: #f9fafb; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
     .section-title { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
     .participant-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -87,8 +96,6 @@
     .chart-legend { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: 13px; color: #4b5563; flex-wrap: wrap; }
     .chart-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
-    /* Вкладка Закрытия */
-    .closures-wrap { }
     .analytics-card {
         background: #fff; border-radius: 14px; padding: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
@@ -139,6 +146,14 @@
     }
     .closures-table .vacancy-dept {
         font-weight: 400; font-size: 11px; color: #6b7280; display: block; margin-top: 2px;
+    }
+    .closures-table .status-active {
+        display: inline-block; background: #fef3c7; color: #92400e;
+        font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700;
+    }
+    .closures-table .status-closed {
+        display: inline-block; background: #d1fae5; color: #065f46;
+        font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700;
     }
     .closures-table .no-hire-badge {
         display: inline-block; background: #fef3c7; color: #92400e;
@@ -441,10 +456,10 @@
         </div>
         <div class="input-group"><label>Норма рабочих часов в месяц</label><input type="number" id="vacHours" value="164" min="0"></div>
 
-        <div class="closure-section hidden" id="closureSection">
-            <div class="closure-title">✅ Закрытие вакансии</div>
+        <div class="closure-section" id="closureSection">
+            <div class="closure-title">👥 Нанятые сотрудники</div>
 
-            <div class="checkbox-row">
+            <div class="checkbox-row" id="noHireRow" style="display:none;">
                 <input type="checkbox" id="vacNoHire" onchange="onNoHireChange()">
                 <label for="vacNoHire">🚫 Закрыта без найма</label>
             </div>
@@ -458,7 +473,6 @@
                         <option value="Эльвина">Эльвина</option>
                     </select>
                 </div>
-                <div style="font-size:13px;color:#4b5563;margin-bottom:8px;font-weight:600;">Нанятые сотрудники:</div>
                 <div id="hiresEditor"></div>
                 <button type="button" class="add-hire-modal-btn" onclick="addHireInModal()">+ Добавить сотрудника</button>
             </div>
@@ -524,6 +538,8 @@ function daysBetween(open, close) {
     return diff > 0 ? diff : 0;
 }
 function isArchived(v) { return !!v.close_date; }
+function getHiresCount(v) { return Array.isArray(v.hires_data) ? v.hires_data.length : 0; }
+function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire; }
 function toast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -626,10 +642,11 @@ function render() {
 
     const active = vacancies.filter(v => !isArchived(v));
     const archive = vacancies.filter(v => isArchived(v));
+    const inClosures = vacancies.filter(v => isInClosures(v));
 
     document.getElementById('countActive').textContent = active.length;
     document.getElementById('countArchive').textContent = archive.length;
-    document.getElementById('countClosures').textContent = archive.length;
+    document.getElementById('countClosures').textContent = inClosures.length;
 
     if (vacancies.length === 0) {
         empty.style.display = 'block';
@@ -669,6 +686,14 @@ function renderCard(v) {
     const costColor = m.costPerHire === 0 ? '' : m.costPerHire <= 30000 ? 'good' : m.costPerHire <= 60000 ? 'warn' : 'bad';
     const archived = isArchived(v);
 
+    const hiredCount = getHiresCount(v);
+    const planned = num(v.hires);
+    const progressHtml = (hiredCount > 0 || planned > 1) && !v.closed_no_hire ? `
+        <div class="hires-progress ${hiredCount >= planned ? 'complete' : ''}">
+            ${hiredCount >= planned ? '✅' : '🟡'} Нанято: ${hiredCount} из ${planned}
+        </div>
+    ` : (v.closed_no_hire ? '<div class="hires-progress">🚫 Закрыта без найма</div>' : '');
+
     const participantRows = m.rows.map(r => `
         <tr>
             <td class="name">${r.label}${r.multiplyByHires ? '<span class="hr-multiplier">× ' + r.hiresCount + '</span>' : ''}</td>
@@ -683,6 +708,7 @@ function renderCard(v) {
             <div>
                 <div class="vacancy-title">${esc(v.title)}</div>
                 <div class="vacancy-meta">${v.dept ? esc(v.dept) + ' · ' : ''}${v.open_date ? 'Открыта: ' + v.open_date : ''}${v.close_date ? ' · Закрыта: ' + v.close_date : ''}${days ? ' · ' + days + ' дн.' : ''}</div>
+                ${progressHtml}
             </div>
             <div class="vacancy-actions">
                 ${archived ? `<button class="btn secondary small" onclick="restoreVacancy('${v.id}')">↩️ Вернуть</button>` : ''}
@@ -735,15 +761,11 @@ function renderClosuresTab() {
 }
 
 function renderAnalytics() {
-    const closed = vacancies.filter(v => isArchived(v));
-    const withHire = closed.filter(v => !v.closed_no_hire);
-    const noHire = closed.filter(v => v.closed_no_hire);
-
     let totalOffers = 0, accepted = 0, declined = 0;
     const reasonCounts = {};
     DECLINE_REASONS.forEach(r => reasonCounts[r] = 0);
 
-    closed.forEach(v => {
+    vacancies.forEach(v => {
         const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
         hires.forEach(h => {
             if (h.offer === 'accepted') { totalOffers++; accepted++; }
@@ -759,11 +781,14 @@ function renderAnalytics() {
     const acceptPct = totalOffers > 0 ? Math.round((accepted / totalOffers) * 100) : 0;
     const declinePct = totalOffers > 0 ? Math.round((declined / totalOffers) * 100) : 0;
 
+    const closedWithHire = vacancies.filter(v => isArchived(v) && !v.closed_no_hire).length;
+    const closedNoHire = vacancies.filter(v => isArchived(v) && v.closed_no_hire).length;
+
     const kpisHtml = `
         <div class="kpi-box">
             <div class="label">Всего закрытых</div>
-            <div class="value">${closed.length}</div>
-            <div style="font-size:11px;color:#6b7280;margin-top:4px;">с наймом: ${withHire.length} · без найма: ${noHire.length}</div>
+            <div class="value">${closedWithHire + closedNoHire}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:4px;">с наймом: ${closedWithHire} · без найма: ${closedNoHire}</div>
         </div>
         <div class="kpi-box green">
             <div class="label">✅ Приняли оффер</div>
@@ -775,12 +800,11 @@ function renderAnalytics() {
         </div>
         <div class="kpi-box orange">
             <div class="label">🚫 Без найма</div>
-            <div class="value">${noHire.length}</div>
+            <div class="value">${closedNoHire}</div>
         </div>
     `;
     document.getElementById('analyticsKpis').innerHTML = kpisHtml;
 
-    // Таблица причин
     const reasonsHtml = declined > 0 ? `
         <table class="reasons-table">
             <thead><tr>
@@ -807,27 +831,50 @@ function renderAnalytics() {
 
 function renderClosuresTable() {
     const wrap = document.getElementById('closuresTableWrap');
-    const closed = vacancies.filter(v => isArchived(v)).sort((a, b) => (b.close_date || '').localeCompare(a.close_date || ''));
+    // Показываем: вакансии с нанятыми ИЛИ закрытые без найма
+    const items = vacancies.filter(v => isInClosures(v));
 
-    if (closed.length === 0) {
-        wrap.innerHTML = '<div class="empty-state"><h3>Закрытых вакансий пока нет</h3><p>Они появятся здесь, когда вы укажете дату закрытия</p></div>';
+    // Сортировка: активные сверху, потом закрытые (новые сверху)
+    items.sort((a, b) => {
+        const aArch = isArchived(a), bArch = isArchived(b);
+        if (aArch !== bArch) return aArch ? 1 : -1;
+        if (aArch && bArch) return (b.close_date || '').localeCompare(a.close_date || '');
+        return 0;
+    });
+
+    if (items.length === 0) {
+        wrap.innerHTML = '<div class="empty-state"><h3>Пока нет нанятых сотрудников</h3><p>Добавьте сотрудников в вакансии — они появятся здесь</p></div>';
         return;
     }
 
     let html = '<table class="closures-table"><thead><tr>';
     html += '<th>Вакансия</th>';
-    html += '<th>Закрыта</th>';
+    html += '<th>Статус</th>';
     html += '<th>Рекрутер</th>';
     html += '<th>Нанятые сотрудники</th>';
     html += '</tr></thead><tbody>';
 
-    closed.forEach(v => {
+    items.forEach(v => {
         const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
+        const archived = isArchived(v);
+        const hiredCount = hires.length;
+        const planned = num(v.hires);
+
+        // Статус
+        let statusHtml = '';
+        if (v.closed_no_hire) {
+            statusHtml = '<span class="status-closed">✅ Закрыта без найма</span>';
+        } else if (archived) {
+            statusHtml = '<span class="status-closed">✅ Закрыта ' + formatDate(v.close_date) + '</span>';
+        } else {
+            statusHtml = '<span class="status-active">🟡 Нанято ' + hiredCount + ' из ' + planned + '</span>';
+        }
+
         html += '<tr data-vacancy-id="' + v.id + '">';
         html += '<td class="vacancy-cell">' + esc(v.title) + (v.dept ? '<span class="vacancy-dept">' + esc(v.dept) + '</span>' : '') + '</td>';
-        html += '<td>' + (v.close_date || '—') + '</td>';
-        html += '<td>' + (v.closed_no_hire ? '—' : renderRecruiterSelect(v)) + '</td>';
-        html += '<td>' + (v.closed_no_hire ? '<span class="no-hire-badge">🚫 Закрыта без найма</span>' : renderHiresCell(v, hires)) + '</td>';
+        html += '<td>' + statusHtml + '</td>';
+        html += '<td>' + renderRecruiterSelect(v) + '</td>';
+        html += '<td>' + (v.closed_no_hire ? '<span class="no-hire-badge">🚫 Без найма</span>' : renderHiresCell(v, hires)) + '</td>';
         html += '</tr>';
     });
 
@@ -1033,9 +1080,13 @@ async function removeHire(vacancyId, index) {
 /* ===== Модалка ===== */
 function onCloseDateChange() {
     const closeDate = document.getElementById('vacClose').value;
-    const section = document.getElementById('closureSection');
-    if (closeDate) section.classList.remove('hidden');
-    else section.classList.add('hidden');
+    const noHireRow = document.getElementById('noHireRow');
+    if (closeDate) noHireRow.style.display = 'flex';
+    else {
+        noHireRow.style.display = 'none';
+        document.getElementById('vacNoHire').checked = false;
+        onNoHireChange();
+    }
 }
 
 function onNoHireChange() {
@@ -1156,7 +1207,7 @@ async function saveVacancy() {
     const title = document.getElementById('vacTitle').value.trim();
     if (!title) { toast('Введите название позиции'); return; }
     const closeDate = document.getElementById('vacClose').value || null;
-    const noHire = document.getElementById('vacNoHire').checked;
+    const noHire = document.getElementById('vacNoHire').checked && closeDate;
     const recruiterName = document.getElementById('vacRecruiter').value || null;
 
     let cleanHires = [];
@@ -1172,17 +1223,30 @@ async function saveVacancy() {
             }));
     }
 
+    const planned = num(document.getElementById('vacHires').value);
+    if (cleanHires.length > planned && planned > 0) {
+        if (confirm('Нанято ' + cleanHires.length + ' человек, а в плане ' + planned + '.\n\nОбновить план до ' + cleanHires.length + '?')) {
+            document.getElementById('vacHires').value = cleanHires.length;
+        }
+    } else if (cleanHires.length > planned && planned === 0) {
+        if (confirm('Нанято ' + cleanHires.length + ' человек, а план стоит 0.\n\nОбновить план до ' + cleanHires.length + '?')) {
+            document.getElementById('vacHires').value = cleanHires.length;
+        }
+    }
+
+    const finalHires = num(document.getElementById('vacHires').value);
+
     const data = {
         title,
         dept: document.getElementById('vacDept').value.trim() || null,
         open_date: document.getElementById('vacOpen').value || null,
         close_date: closeDate,
         salary: num(document.getElementById('vacSalary').value),
-        hires: num(document.getElementById('vacHires').value),
+        hires: finalHires,
         norm_hours: num(document.getElementById('vacHours').value) || 164,
-        recruiter_name: closeDate && !noHire ? recruiterName : null,
-        hires_data: closeDate && !noHire ? cleanHires : [],
-        closed_no_hire: closeDate ? noHire : false
+        recruiter_name: recruiterName,
+        hires_data: cleanHires,
+        closed_no_hire: noHire
     };
 
     const editId = document.getElementById('editId').value;
@@ -1233,7 +1297,7 @@ async function restoreVacancy(id) {
     const v = vacancies.find(x => x.id === id);
     if (!v) return;
     if (!confirm('Вернуть вакансию «' + v.title + '» в активные? Дата закрытия будет очищена.')) return;
-    const { error } = await sb.from('vacancies').update({ close_date: null }).eq('id', id);
+    const { error } = await sb.from('vacancies').update({ close_date: null, closed_no_hire: false }).eq('id', id);
     if (error) { toast('Ошибка: ' + error.message); return; }
     toast('Вакансия возвращена в активные');
     await loadVacancies();
