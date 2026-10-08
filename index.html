@@ -22,6 +22,43 @@
     .btn.small { padding: 6px 12px; font-size: 12px; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* Экран входа */
+    .login-screen {
+        position: fixed; inset: 0; z-index: 5000;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .login-card {
+        background: #fff; border-radius: 16px; padding: 40px;
+        max-width: 420px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .login-card h1 { font-size: 24px; text-align: center; margin-bottom: 8px; color: #1a1f36; }
+    .login-card .login-sub { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 28px; }
+    .login-card .login-icon { text-align: center; font-size: 48px; margin-bottom: 12px; }
+    .login-card input[type="password"] {
+        width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb;
+        border-radius: 10px; font-size: 16px; margin-bottom: 14px;
+        transition: border-color 0.2s; letter-spacing: 2px;
+    }
+    .login-card input[type="password"]:focus {
+        outline: none; border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+    }
+    .login-card .login-btn {
+        width: 100%; padding: 14px; background: #6366f1;
+        color: #fff; border: none; border-radius: 10px;
+        font-size: 16px; font-weight: 700; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .login-card .login-btn:hover { background: #4f46e5; }
+    .login-error {
+        color: #ef4444; font-size: 13px; text-align: center;
+        margin-top: 12px; min-height: 18px; font-weight: 600;
+    }
+    .login-hint { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px; }
+
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; flex-wrap: wrap; }
     .tab { padding: 10px 20px; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; }
     .tab:hover { color: #4f46e5; }
@@ -65,14 +102,45 @@
     .participant-table tr.total-row td { border-top: 1px solid #e5e7eb; padding-top: 10px; }
     .participant-table tr.total-row .name { font-weight: 700; color: #1a1f36; font-size: 13px; }
     .participant-table tr.total-row .calc { font-size: 16px; color: #4f46e5; }
-    .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
-    .row label { flex: 1; color: #4b5563; font-size: 12px; }
-    .row input { width: 140px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; text-align: right; }
-    .row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
-    .row .suffix { font-size: 11px; color: #9ca3af; width: 20px; }
-    .row.total { border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px; font-weight: 700; }
-    .row.total label { color: #1a1f36; }
-    .row.total .val { width: 160px; text-align: right; font-size: 15px; color: #1a1f36; }
+
+    /* Внешние расходы */
+    .ext-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .ext-row label { flex: 1; color: #4b5563; font-size: 12px; }
+    .ext-row input { width: 140px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; text-align: right; }
+    .ext-row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+    .ext-row .suffix { font-size: 11px; color: #9ca3af; width: 20px; }
+    .ext-row .ext-remove {
+        background: none; border: none; color: #9ca3af; cursor: pointer;
+        font-size: 16px; padding: 2px 6px; border-radius: 4px;
+        transition: all 0.15s;
+    }
+    .ext-row .ext-remove:hover { background: #fee2e2; color: #dc2626; }
+    .ext-total {
+        display: flex; align-items: center; gap: 8px;
+        border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;
+        font-weight: 700;
+    }
+    .ext-total label { flex: 1; color: #1a1f36; font-size: 13px; }
+    .ext-total .val { width: 160px; text-align: right; font-size: 15px; color: #1a1f36; }
+    .add-ext-btn {
+        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
+        padding: 8px 14px; border-radius: 8px; cursor: pointer;
+        font-size: 12px; font-weight: 600; width: 100%;
+        margin-top: 8px;
+    }
+    .add-ext-btn:hover { background: #eef2ff; border-color: #6366f1; }
+    .add-ext-menu {
+        background: #fff; border: 2px solid #e0e7ff; border-radius: 10px;
+        padding: 10px; margin-top: 8px;
+        display: flex; flex-direction: column; gap: 4px;
+    }
+    .add-ext-menu button {
+        background: none; border: none; text-align: left;
+        padding: 8px 12px; border-radius: 6px; cursor: pointer;
+        font-size: 13px; color: #4b5563; transition: all 0.15s;
+    }
+    .add-ext-menu button:hover { background: #eef2ff; color: #4f46e5; }
+
     .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
     .kpi-box { background: #f9fafb; border-radius: 10px; padding: 12px; border-left: 4px solid #6366f1; }
     .kpi-box.green { border-left-color: #10b981; }
@@ -96,172 +164,65 @@
     .chart-legend { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: 13px; color: #4b5563; flex-wrap: wrap; }
     .chart-legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
-    .analytics-card {
-        background: #fff; border-radius: 14px; padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
-    }
+    .analytics-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .analytics-card h2 { font-size: 16px; margin-bottom: 16px; color: #374151; }
-    .analytics-kpis {
-        display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 16px; margin-bottom: 20px;
-    }
+    .analytics-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
     @media (max-width: 900px) { .analytics-kpis { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 500px) { .analytics-kpis { grid-template-columns: 1fr; } }
-    .reasons-table {
-        width: 100%; border-collapse: collapse; font-size: 13px;
-        background: #f9fafb; border-radius: 10px; overflow: hidden;
-    }
-    .reasons-table th {
-        text-align: left; padding: 10px 12px;
-        font-size: 11px; color: #6b7280; text-transform: uppercase;
-        letter-spacing: 0.3px; font-weight: 700;
-        border-bottom: 2px solid #e5e7eb; background: #fff;
-    }
-    .reasons-table td {
-        padding: 8px 12px; border-bottom: 1px solid #f3f4f6;
-        color: #1a1f36;
-    }
+    .reasons-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #f9fafb; border-radius: 10px; overflow: hidden; }
+    .reasons-table th { text-align: left; padding: 10px 12px; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; border-bottom: 2px solid #e5e7eb; background: #fff; }
+    .reasons-table td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; color: #1a1f36; }
     .reasons-table tr:last-child td { border-bottom: none; }
     .reasons-table .reason-pct { color: #4f46e5; font-weight: 700; text-align: right; }
     .reasons-table .reason-count { color: #6b7280; text-align: right; }
 
-    .closures-table-wrap {
-        background: #fff; border-radius: 14px; padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto;
-    }
+    .closures-table-wrap { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
     .closures-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
-    .closures-table th {
-        background: #f9fafb; text-align: left; padding: 10px 12px;
-        font-size: 11px; color: #6b7280; text-transform: uppercase;
-        letter-spacing: 0.3px; font-weight: 700;
-        white-space: nowrap; border-bottom: 2px solid #e5e7eb;
-    }
-    .closures-table td {
-        padding: 10px 12px; border-bottom: 1px solid #f3f4f6;
-        color: #1a1f36; vertical-align: top;
-    }
+    .closures-table th { background: #f9fafb; text-align: left; padding: 10px 12px; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; white-space: nowrap; border-bottom: 2px solid #e5e7eb; }
+    .closures-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #1a1f36; vertical-align: top; }
     .closures-table tr:hover td { background: #fafbfc; }
-    .closures-table .vacancy-cell {
-        font-weight: 700; color: #1a1f36; white-space: nowrap;
-    }
-    .closures-table .vacancy-dept {
-        font-weight: 400; font-size: 11px; color: #6b7280; display: block; margin-top: 2px;
-    }
-    .closures-table .status-active {
-        display: inline-block; background: #fef3c7; color: #92400e;
-        font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700;
-    }
-    .closures-table .status-closed {
-        display: inline-block; background: #d1fae5; color: #065f46;
-        font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700;
-    }
-    .closures-table .no-hire-badge {
-        display: inline-block; background: #fef3c7; color: #92400e;
-        font-size: 12px; padding: 6px 12px; border-radius: 8px;
-        font-weight: 700;
-    }
+    .closures-table .vacancy-cell { font-weight: 700; color: #1a1f36; white-space: nowrap; }
+    .closures-table .vacancy-dept { font-weight: 400; font-size: 11px; color: #6b7280; display: block; margin-top: 2px; }
+    .closures-table .status-active { display: inline-block; background: #fef3c7; color: #92400e; font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700; }
+    .closures-table .status-closed { display: inline-block; background: #d1fae5; color: #065f46; font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700; }
+    .closures-table .no-hire-badge { display: inline-block; background: #fef3c7; color: #92400e; font-size: 12px; padding: 6px 12px; border-radius: 8px; font-weight: 700; }
 
-    .hire-view {
-        background: #f9fafb; border-radius: 8px; padding: 10px;
-        margin-bottom: 6px; border-left: 3px solid #6366f1;
-        display: flex; justify-content: space-between; align-items: center;
-        gap: 8px;
-    }
+    .hire-view { background: #f9fafb; border-radius: 8px; padding: 10px; margin-bottom: 6px; border-left: 3px solid #6366f1; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .hire-view .hire-view-info { flex: 1; min-width: 0; }
-    .hire-view .hire-view-name {
-        font-weight: 600; margin-bottom: 4px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .hire-view .hire-view-meta {
-        font-size: 12px; color: #6b7280;
-        display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-    }
-    .hire-view .hire-view-meta .reason-text {
-        color: #dc2626; font-weight: 600;
-    }
-    .hire-view .hire-view-actions {
-        display: flex; gap: 4px; flex-shrink: 0;
-    }
-    .hire-view .hire-view-actions button {
-        background: none; border: 1px solid #d1d5db; border-radius: 6px;
-        padding: 4px 8px; cursor: pointer; font-size: 12px;
-        color: #4b5563; transition: all 0.15s;
-    }
+    .hire-view .hire-view-name { font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hire-view .hire-view-meta { font-size: 12px; color: #6b7280; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .hire-view .hire-view-meta .reason-text { color: #dc2626; font-weight: 600; }
+    .hire-view .hire-view-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .hire-view .hire-view-actions button { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #4b5563; transition: all 0.15s; }
     .hire-view .hire-view-actions button:hover { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
     .hire-view .hire-view-actions button.del:hover { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
 
-    .hire-edit {
-        background: #eef2ff; border-radius: 8px; padding: 10px;
-        margin-bottom: 6px; border: 2px dashed #c7d2fe;
-    }
-    .hire-edit .hire-edit-header {
-        display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
-    }
-    .hire-edit .hire-edit-header input {
-        flex: 1; padding: 6px 8px; border: 1px solid #d1d5db;
-        border-radius: 6px; font-size: 13px;
-    }
-    .hire-edit .hire-edit-row {
-        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-        font-size: 12px;
-    }
-    .hire-edit .hire-edit-row label {
-        color: #6b7280; margin: 0;
-    }
-    .hire-edit .hire-edit-row input[type="date"], .hire-edit .hire-edit-row select {
-        padding: 5px 8px; border: 1px solid #d1d5db;
-        border-radius: 6px; font-size: 12px; background: #fff;
-    }
-    .hire-edit .hire-edit-row input[type="text"].other-reason {
-        flex: 1; min-width: 140px;
-    }
-    .hire-edit .hire-edit-actions {
-        display: flex; gap: 6px; margin-top: 10px;
-    }
-    .hire-edit .save-btn {
-        background: #10b981; color: #fff; border: none;
-        padding: 6px 14px; border-radius: 6px; cursor: pointer;
-        font-size: 12px; font-weight: 600;
-    }
+    .hire-edit { background: #eef2ff; border-radius: 8px; padding: 10px; margin-bottom: 6px; border: 2px dashed #c7d2fe; }
+    .hire-edit .hire-edit-header { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .hire-edit .hire-edit-header input { flex: 1; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+    .hire-edit .hire-edit-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; }
+    .hire-edit .hire-edit-row label { color: #6b7280; margin: 0; }
+    .hire-edit .hire-edit-row input[type="date"], .hire-edit .hire-edit-row select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; background: #fff; }
+    .hire-edit .hire-edit-row input[type="text"].other-reason { flex: 1; min-width: 140px; }
+    .hire-edit .hire-edit-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .hire-edit .save-btn { background: #10b981; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
     .hire-edit .save-btn:hover { background: #059669; }
-    .hire-edit .cancel-btn {
-        background: #e5e7eb; color: #374151; border: none;
-        padding: 6px 14px; border-radius: 6px; cursor: pointer;
-        font-size: 12px; font-weight: 600;
-    }
+    .hire-edit .cancel-btn { background: #e5e7eb; color: #374151; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
     .hire-edit .cancel-btn:hover { background: #d1d5db; }
-    .offer-radio-btns {
-        display: flex; gap: 6px; align-items: center;
-    }
-    .offer-radio-btns label {
-        display: flex; align-items: center; gap: 4px; font-size: 12px;
-        cursor: pointer; padding: 4px 10px; border-radius: 6px;
-        border: 1px solid #d1d5db; background: #fff;
-    }
+    .offer-radio-btns { display: flex; gap: 6px; align-items: center; }
+    .offer-radio-btns label { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; padding: 4px 10px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; }
     .offer-radio-btns input[type="radio"] { margin: 0; }
     .offer-radio-btns label.accepted-checked { background: #d1fae5; border-color: #10b981; color: #065f46; }
     .offer-radio-btns label.declined-checked { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
 
-    .closures-table .offer-badge {
-        display: inline-block; font-size: 11px; padding: 3px 8px;
-        border-radius: 10px; font-weight: 700; white-space: nowrap;
-    }
+    .closures-table .offer-badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 700; white-space: nowrap; }
     .closures-table .offer-accepted { background: #d1fae5; color: #065f46; }
     .closures-table .offer-declined { background: #fee2e2; color: #991b1b; }
     .closures-table .offer-pending { background: #e5e7eb; color: #4b5563; }
-    .closures-table .empty-hires {
-        color: #9ca3af; font-size: 12px; font-style: italic;
-    }
-    .closures-table .add-hire-btn {
-        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
-        padding: 6px 12px; border-radius: 8px; cursor: pointer;
-        font-size: 12px; font-weight: 600; margin-top: 6px;
-    }
+    .closures-table .empty-hires { color: #9ca3af; font-size: 12px; font-style: italic; }
+    .closures-table .add-hire-btn { background: none; border: 1px dashed #c7d2fe; color: #4f46e5; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 6px; }
     .closures-table .add-hire-btn:hover { background: #eef2ff; border-color: #6366f1; }
-    .closures-table .recruiter-select {
-        padding: 6px 8px; border: 1px solid #d1d5db;
-        border-radius: 6px; font-size: 13px; background: #fff;
-    }
+    .closures-table .recruiter-select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; background: #fff; }
 
     .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
     .empty-state h3 { color: #6b7280; margin-bottom: 8px; font-size: 18px; }
@@ -276,60 +237,27 @@
     .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
-    .closure-section {
-        background: #eef2ff; border-radius: 10px; padding: 14px;
-        margin-bottom: 14px; border-left: 4px solid #6366f1;
-    }
-    .closure-section .closure-title {
-        font-size: 13px; font-weight: 700; color: #3730a3;
-        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
-    }
-    .checkbox-row {
-        display: flex; align-items: center; gap: 8px;
-        margin-bottom: 12px; font-size: 13px;
-    }
+    .closure-section { background: #eef2ff; border-radius: 10px; padding: 14px; margin-bottom: 14px; border-left: 4px solid #6366f1; }
+    .closure-section .closure-title { font-size: 13px; font-weight: 700; color: #3730a3; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; }
     .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
     .checkbox-row label { cursor: pointer; color: #1a1f36; font-weight: 600; }
 
-    .hire-editor {
-        background: #fff; border-radius: 8px; padding: 10px;
-        margin-bottom: 8px; border: 1px solid #e0e7ff;
-    }
-    .hire-editor .hire-editor-header {
-        display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
-    }
+    .hire-editor { background: #fff; border-radius: 8px; padding: 10px; margin-bottom: 8px; border: 1px solid #e0e7ff; }
+    .hire-editor .hire-editor-header { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
     .hire-editor .hire-editor-header input { flex: 1; }
-    .hire-editor .hire-editor-row {
-        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .hire-editor .hire-editor-row label {
-        font-size: 12px; color: #6b7280; margin: 0;
-    }
-    .hire-editor .hire-editor-row input[type="date"],
-    .hire-editor .hire-editor-row input[type="text"],
-    .hire-editor .hire-editor-row select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; }
+    .hire-editor .hire-editor-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .hire-editor .hire-editor-row label { font-size: 12px; color: #6b7280; margin: 0; }
+    .hire-editor .hire-editor-row input[type="date"], .hire-editor .hire-editor-row input[type="text"], .hire-editor .hire-editor-row select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; }
     .hire-editor .hire-editor-row input[type="date"] { flex: 1; min-width: 130px; }
     .hire-editor .hire-editor-row input[type="text"].other-reason { flex: 1; min-width: 140px; }
-    .hire-editor .offer-radio {
-        display: flex; gap: 8px; align-items: center;
-    }
-    .hire-editor .offer-radio label {
-        display: flex; align-items: center; gap: 4px; font-size: 13px;
-        cursor: pointer; padding: 4px 10px; border-radius: 6px;
-        border: 1px solid #d1d5db; background: #fff;
-    }
+    .hire-editor .offer-radio { display: flex; gap: 8px; align-items: center; }
+    .hire-editor .offer-radio label { display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; padding: 4px 10px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; }
     .hire-editor .offer-radio input[type="radio"] { margin: 0; }
     .hire-editor .offer-radio label.accepted-checked { background: #d1fae5; border-color: #10b981; color: #065f46; }
     .hire-editor .offer-radio label.declined-checked { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
-    .hire-editor .remove-hire-btn {
-        background: none; border: none; color: #ef4444; cursor: pointer;
-        font-size: 16px; padding: 4px 8px;
-    }
-    .add-hire-modal-btn {
-        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
-        padding: 8px 14px; border-radius: 8px; cursor: pointer;
-        font-size: 13px; font-weight: 600; width: 100%;
-    }
+    .hire-editor .remove-hire-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 4px 8px; }
+    .add-hire-modal-btn { background: none; border: 1px dashed #c7d2fe; color: #4f46e5; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; width: 100%; }
     .add-hire-modal-btn:hover { background: #eef2ff; border-color: #6366f1; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1a1f36; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; transition: transform 0.3s; z-index: 2000; }
@@ -344,9 +272,32 @@
     .sync-badge.error { background: #fee2e2; color: #991b1b; }
     .archive-hint { font-size: 12px; color: #6b7280; margin-bottom: 16px; }
     .hidden { display: none !important; }
+
+    .logout-btn {
+        background: #fff; border: 1px solid #e5e7eb; color: #6b7280;
+        padding: 8px 14px; border-radius: 8px; font-size: 13px;
+        font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .logout-btn:hover { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
 </style>
 </head>
 <body>
+
+<!-- ЭКРАН ВХОДА -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-icon">🔐</div>
+        <h1>HR Дашборд</h1>
+        <p class="login-sub">Введите пароль для доступа</p>
+        <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="current-password" autofocus>
+        <button class="login-btn" onclick="checkPassword()">Войти</button>
+        <div class="login-error" id="loginError"></div>
+        <div class="login-hint">Доступ только для сотрудников HR-отдела</div>
+    </div>
+</div>
+
+<!-- ОСНОВНОЙ ДАШБОРД -->
+<div id="mainApp" style="display:none;">
 
 <div id="loadingScreen" class="loading">Загрузка данных...</div>
 <div id="errorScreen" class="hidden"></div>
@@ -360,6 +311,7 @@
                 <span class="sync-badge" id="syncBadge">Готов</span>
             </p>
         </div>
+        <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
     </div>
 
     <div class="topbar">
@@ -487,9 +439,14 @@
 
 <div class="toast" id="toast"></div>
 
+</div>
+
 <script>
 const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
+
+// ПАРОЛЬ (в base64)
+const PASSWORD_B64 = 'aHItYWdlbmN5';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -507,14 +464,16 @@ const HOURLY_PARTICIPANTS = [
     { key: 'hrAdmin', label: 'HR-администрирование', multiplyByHires: true }
 ];
 const KPI_KEY = 'kpi';
+
+// Внешние статьи: alwaysVisible = показывать всегда (нельзя скрыть)
 const EXTERNAL_ITEMS = [
-    { key: 'publication', label: 'Публикация вакансий' },
-    { key: 'agency', label: 'Кадровое агентство / фриланс' },
-    { key: 'referral', label: 'Бонусы за рекомендацию' },
-    { key: 'target', label: 'Таргет на вакансию' },
-    { key: 'assessment', label: 'Тестирования / ассессменты' },
-    { key: 'medical', label: 'Медосмотр и прочее' },
-    { key: 'other', label: 'Прочие внешние расходы' }
+    { key: 'publication', label: 'Публикация вакансий', alwaysVisible: true },
+    { key: 'agency', label: 'Кадровое агентство / фриланс', alwaysVisible: false },
+    { key: 'referral', label: 'Бонусы за рекомендацию', alwaysVisible: false },
+    { key: 'target', label: 'Таргет на вакансию', alwaysVisible: false },
+    { key: 'assessment', label: 'Тестирования / ассессменты', alwaysVisible: false },
+    { key: 'medical', label: 'Медосмотр и прочее', alwaysVisible: false },
+    { key: 'other', label: 'Прочие внешние расходы', alwaysVisible: true }
 ];
 
 let vacancies = [];
@@ -526,6 +485,7 @@ let currentTab = 'active';
 let modalHires = [];
 let hireDrafts = {};
 let activeEditKey = null;
+let addExtMenuOpen = {};  // { vacancyId: true/false } — открыто ли меню добавления расходов
 
 function num(v) { return Math.max(0, Number(v) || 0); }
 function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
@@ -540,6 +500,13 @@ function daysBetween(open, close) {
 function isArchived(v) { return !!v.close_date; }
 function getHiresCount(v) { return Array.isArray(v.hires_data) ? v.hires_data.length : 0; }
 function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire; }
+function getHiddenExternals(v) { return Array.isArray(v.external_hidden) ? v.external_hidden : []; }
+function isExternalVisible(v, key) {
+    const item = EXTERNAL_ITEMS.find(i => i.key === key);
+    if (!item) return false;
+    if (item.alwaysVisible) return true;
+    return !getHiddenExternals(v).includes(key);
+}
 function toast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -561,6 +528,47 @@ function showError(title, message, details) {
         '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипт выполнен в Supabase.</p></div>';
 }
 
+/* ===== Вход / выход ===== */
+function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    const errorEl = document.getElementById('loginError');
+    const encoded = btoa(unescape(encodeURIComponent(input)));
+    if (encoded === PASSWORD_B64) {
+        sessionStorage.setItem('hr_auth', 'ok');
+        errorEl.textContent = '';
+        showDashboard();
+    } else {
+        errorEl.textContent = 'Неверный пароль';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+}
+function logout() {
+    sessionStorage.removeItem('hr_auth');
+    location.reload();
+}
+function showDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    loadVacancies();
+    subscribeRealtime();
+}
+function isAuthenticated() {
+    return sessionStorage.getItem('hr_auth') === 'ok';
+}
+
+// Нажатие Enter на экране входа
+document.addEventListener('DOMContentLoaded', () => {
+    const pwd = document.getElementById('passwordInput');
+    if (pwd) {
+        pwd.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+    }
+    if (isAuthenticated()) showDashboard();
+});
+
+/* ===== Расчёт ===== */
 function calc(v) {
     const p = v.participants || {};
     const normHours = num(v.norm_hours) || NORM_HOURS_DEFAULT;
@@ -581,13 +589,22 @@ function calc(v) {
     });
     const kpi = num(p[KPI_KEY]);
     internalSum += kpi;
+
+    // Внешние: считаем только ВИДИМЫЕ статьи
     const ext = v.external || {};
-    const externalSum = EXTERNAL_ITEMS.reduce((s, i) => s + num(ext[i.key]), 0);
+    let externalSum = 0;
+    EXTERNAL_ITEMS.forEach(item => {
+        if (isExternalVisible(v, item.key)) {
+            externalSum += num(ext[item.key]);
+        }
+    });
+
     const total = internalSum + externalSum;
     const costPerHire = hiresCount > 0 ? total / hiresCount : 0;
     return { rows, kpi, internalSum, externalSum, total, hires: hiresCount, costPerHire, normHours };
 }
 
+/* ===== Загрузка ===== */
 async function loadVacancies() {
     setSync('syncing');
     try {
@@ -703,6 +720,35 @@ function renderCard(v) {
         </tr>
     `).join('');
 
+    // Внешние расходы: видимые + меню добавления
+    const ext = v.external || {};
+    const visibleExternals = EXTERNAL_ITEMS.filter(i => isExternalVisible(v, i.key));
+    const hiddenExternals = EXTERNAL_ITEMS.filter(i => !isExternalVisible(v, i.key));
+
+    const extRows = visibleExternals.map(i => `
+        <div class="ext-row">
+            <label>${i.label}</label>
+            <input type="number" min="0" value="${num(ext[i.key]) || ''}" placeholder="0" onchange="updateExternal('${v.id}', '${i.key}', this.value)">
+            <span class="suffix">₽</span>
+            ${!i.alwaysVisible ? `<button class="ext-remove" onclick="hideExternal('${v.id}', '${i.key}')" title="Убрать">✕</button>` : '<span style="width:26px;"></span>'}
+        </div>
+    `).join('');
+
+    const isMenuOpen = addExtMenuOpen[v.id];
+    const menuHtml = isMenuOpen && hiddenExternals.length > 0 ? `
+        <div class="add-ext-menu">
+            ${hiddenExternals.map(i => `
+                <button onclick="showExternal('${v.id}', '${i.key}')">+ ${i.label}</button>
+            `).join('')}
+        </div>
+    ` : '';
+
+    const addBtnHtml = hiddenExternals.length > 0 ? `
+        <button class="add-ext-btn" onclick="toggleAddExtMenu('${v.id}')">
+            ${isMenuOpen ? '✕ Отменить' : '+ Добавить расход'}
+        </button>
+    ` : '';
+
     card.innerHTML = `
         <div class="vacancy-header">
             <div>
@@ -735,14 +781,10 @@ function renderCard(v) {
         </div>
         <div class="section">
             <div class="section-title">💸 Внешние расходы</div>
-            ${EXTERNAL_ITEMS.map(i => `
-                <div class="row">
-                    <label>${i.label}</label>
-                    <input type="number" min="0" value="${num((v.external||{})[i.key]) || ''}" placeholder="0" onchange="updateExternal('${v.id}', '${i.key}', this.value)">
-                    <span class="suffix">₽</span>
-                </div>
-            `).join('')}
-            <div class="row total"><label>Итого внешние</label><span class="val">${fmt(m.externalSum)} ₽</span></div>
+            ${extRows}
+            <div class="ext-total"><label>Итого внешние</label><span class="val">${fmt(m.externalSum)} ₽</span></div>
+            ${addBtnHtml}
+            ${menuHtml}
         </div>
         <div class="section" style="background:#eef2ff;">
             <div class="row total" style="border:none;margin:0;padding:0;">
@@ -752,6 +794,38 @@ function renderCard(v) {
         </div>
     `;
     return card;
+}
+
+/* ===== Внешние: скрыть / показать ===== */
+function toggleAddExtMenu(vacancyId) {
+    addExtMenuOpen[vacancyId] = !addExtMenuOpen[vacancyId];
+    render();
+}
+async function hideExternal(vacancyId, key) {
+    const v = vacancies.find(x => x.id === vacancyId);
+    if (!v) return;
+    const hidden = [...getHiddenExternals(v)];
+    if (!hidden.includes(key)) hidden.push(key);
+    v.external_hidden = hidden;
+    setSync('syncing');
+    const { error } = await sb.from('vacancies').update({ external_hidden: hidden }).eq('id', vacancyId);
+    if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+    setSync('ok');
+    toast('Статья скрыта');
+    render();
+}
+async function showExternal(vacancyId, key) {
+    const v = vacancies.find(x => x.id === vacancyId);
+    if (!v) return;
+    const hidden = getHiddenExternals(v).filter(k => k !== key);
+    v.external_hidden = hidden;
+    addExtMenuOpen[vacancyId] = false;
+    setSync('syncing');
+    const { error } = await sb.from('vacancies').update({ external_hidden: hidden }).eq('id', vacancyId);
+    if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+    setSync('ok');
+    toast('Статья добавлена');
+    render();
 }
 
 /* ===== Вкладка Закрытия ===== */
@@ -831,10 +905,8 @@ function renderAnalytics() {
 
 function renderClosuresTable() {
     const wrap = document.getElementById('closuresTableWrap');
-    // Показываем: вакансии с нанятыми ИЛИ закрытые без найма
     const items = vacancies.filter(v => isInClosures(v));
 
-    // Сортировка: активные сверху, потом закрытые (новые сверху)
     items.sort((a, b) => {
         const aArch = isArchived(a), bArch = isArchived(b);
         if (aArch !== bArch) return aArch ? 1 : -1;
@@ -860,7 +932,6 @@ function renderClosuresTable() {
         const hiredCount = hires.length;
         const planned = num(v.hires);
 
-        // Статус
         let statusHtml = '';
         if (v.closed_no_hire) {
             statusHtml = '<span class="status-closed">✅ Закрыта без найма</span>';
@@ -1267,7 +1338,8 @@ async function saveVacancy() {
             const { error } = await sb.from('vacancies').insert({
                 ...data,
                 participants: emptyParticipants,
-                external: { publication:0, agency:0, referral:0, target:0, assessment:0, medical:0, other:0 }
+                external: { publication:0, agency:0, referral:0, target:0, assessment:0, medical:0, other:0 },
+                external_hidden: []
             });
             if (error) throw error;
             toast('Вакансия создана');
@@ -1487,9 +1559,12 @@ function exportData() {
             m.rows.forEach(r => detailRows.push([v.title, r.label + (r.multiplyByHires ? ' (× ' + r.hiresCount + ')' : ''), r.salary || '', r.hours || '', r.rate > 0 ? Math.round(r.rate * 100) / 100 : '', Math.round(r.cost)]));
             detailRows.push([v.title, 'KPI за выход кандидата', '', '', '', Math.round(m.kpi)]);
             detailRows.push([v.title, 'ИТОГО внутренние', '', '', '', Math.round(m.internalSum)]);
+            // Внешние — только видимые
             EXTERNAL_ITEMS.forEach(item => {
-                const val = num((v.external || {})[item.key]);
-                if (val > 0) detailRows.push([v.title, 'Внешние: ' + item.label, '', '', '', Math.round(val)]);
+                if (isExternalVisible(v, item.key)) {
+                    const val = num((v.external || {})[item.key]);
+                    detailRows.push([v.title, 'Внешние: ' + item.label + (val > 0 ? '' : ' (0)'), '', '', '', Math.round(val)]);
+                }
             });
             detailRows.push([v.title, 'ИТОГО внешние', '', '', '', Math.round(m.externalSum)]);
             detailRows.push(['', '', '', '', '', '']);
@@ -1505,9 +1580,6 @@ document.getElementById('modalOverlay').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
 });
-
-loadVacancies();
-subscribeRealtime();
 </script>
 </body>
 </html>
