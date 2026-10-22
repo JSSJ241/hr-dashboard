@@ -22,41 +22,16 @@
     .btn.small { padding: 6px 12px; font-size: 12px; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Экран входа */
-    .login-screen {
-        position: fixed; inset: 0; z-index: 5000;
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        display: flex; align-items: center; justify-content: center;
-        padding: 20px;
-    }
-    .login-card {
-        background: #fff; border-radius: 16px; padding: 40px;
-        max-width: 420px; width: 100%;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
+    .login-screen { position: fixed; inset: 0; z-index: 5000; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { background: #fff; border-radius: 16px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .login-card h1 { font-size: 24px; text-align: center; margin-bottom: 8px; color: #1a1f36; }
     .login-card .login-sub { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 28px; }
     .login-card .login-icon { text-align: center; font-size: 48px; margin-bottom: 12px; }
-    .login-card input[type="password"] {
-        width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb;
-        border-radius: 10px; font-size: 16px; margin-bottom: 14px;
-        transition: border-color 0.2s; letter-spacing: 2px;
-    }
-    .login-card input[type="password"]:focus {
-        outline: none; border-color: #6366f1;
-        box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
-    }
-    .login-card .login-btn {
-        width: 100%; padding: 14px; background: #6366f1;
-        color: #fff; border: none; border-radius: 10px;
-        font-size: 16px; font-weight: 700; cursor: pointer;
-        transition: background 0.2s;
-    }
+    .login-card input[type="password"] { width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 16px; margin-bottom: 14px; transition: border-color 0.2s; letter-spacing: 2px; }
+    .login-card input[type="password"]:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
+    .login-card .login-btn { width: 100%; padding: 14px; background: #6366f1; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
     .login-card .login-btn:hover { background: #4f46e5; }
-    .login-error {
-        color: #ef4444; font-size: 13px; text-align: center;
-        margin-top: 12px; min-height: 18px; font-weight: 600;
-    }
+    .login-error { color: #ef4444; font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; font-weight: 600; }
     .login-hint { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px; }
 
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; flex-wrap: wrap; }
@@ -75,12 +50,7 @@
     .vacancy-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
     .vacancy-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
 
-    .hires-progress {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: #fef3c7; color: #92400e;
-        font-size: 12px; padding: 4px 10px; border-radius: 10px;
-        font-weight: 700; margin-top: 6px;
-    }
+    .hires-progress { display: inline-flex; align-items: center; gap: 6px; background: #fef3c7; color: #92400e; font-size: 12px; padding: 4px 10px; border-radius: 10px; font-weight: 700; margin-top: 6px; }
     .hires-progress.complete { background: #d1fae5; color: #065f46; }
 
     .section { background: #f9fafb; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
@@ -92,53 +62,27 @@
     .participant-table input { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; min-width: 0; }
     .participant-table input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
     .participant-table .name { font-size: 12px; color: #4b5563; padding-right: 8px; white-space: nowrap; }
-    .participant-table .name .hr-multiplier {
-        display: inline-block; background: #fef3c7; color: #92400e;
-        font-size: 10px; padding: 1px 6px; border-radius: 8px;
-        margin-left: 4px; font-weight: 700;
-    }
+    .participant-table .name .hr-multiplier { display: inline-block; background: #fef3c7; color: #92400e; font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 4px; font-weight: 700; }
     .participant-table .calc { text-align: right; font-weight: 600; color: #1a1f36; white-space: nowrap; font-size: 13px; }
     .participant-table .calc small { display: block; font-weight: 400; font-size: 10px; color: #9ca3af; }
     .participant-table tr.total-row td { border-top: 1px solid #e5e7eb; padding-top: 10px; }
     .participant-table tr.total-row .name { font-weight: 700; color: #1a1f36; font-size: 13px; }
     .participant-table tr.total-row .calc { font-size: 16px; color: #4f46e5; }
 
-    /* Внешние расходы */
     .ext-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
     .ext-row label { flex: 1; color: #4b5563; font-size: 12px; }
     .ext-row input { width: 140px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; text-align: right; }
     .ext-row input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
     .ext-row .suffix { font-size: 11px; color: #9ca3af; width: 20px; }
-    .ext-row .ext-remove {
-        background: none; border: none; color: #9ca3af; cursor: pointer;
-        font-size: 16px; padding: 2px 6px; border-radius: 4px;
-        transition: all 0.15s;
-    }
+    .ext-row .ext-remove { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; transition: all 0.15s; }
     .ext-row .ext-remove:hover { background: #fee2e2; color: #dc2626; }
-    .ext-total {
-        display: flex; align-items: center; gap: 8px;
-        border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;
-        font-weight: 700;
-    }
+    .ext-total { display: flex; align-items: center; gap: 8px; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px; font-weight: 700; }
     .ext-total label { flex: 1; color: #1a1f36; font-size: 13px; }
     .ext-total .val { width: 160px; text-align: right; font-size: 15px; color: #1a1f36; }
-    .add-ext-btn {
-        background: none; border: 1px dashed #c7d2fe; color: #4f46e5;
-        padding: 8px 14px; border-radius: 8px; cursor: pointer;
-        font-size: 12px; font-weight: 600; width: 100%;
-        margin-top: 8px;
-    }
+    .add-ext-btn { background: none; border: 1px dashed #c7d2fe; color: #4f46e5; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; width: 100%; margin-top: 8px; }
     .add-ext-btn:hover { background: #eef2ff; border-color: #6366f1; }
-    .add-ext-menu {
-        background: #fff; border: 2px solid #e0e7ff; border-radius: 10px;
-        padding: 10px; margin-top: 8px;
-        display: flex; flex-direction: column; gap: 4px;
-    }
-    .add-ext-menu button {
-        background: none; border: none; text-align: left;
-        padding: 8px 12px; border-radius: 6px; cursor: pointer;
-        font-size: 13px; color: #4b5563; transition: all 0.15s;
-    }
+    .add-ext-menu { background: #fff; border: 2px solid #e0e7ff; border-radius: 10px; padding: 10px; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .add-ext-menu button { background: none; border: none; text-align: left; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #4b5563; transition: all 0.15s; }
     .add-ext-menu button:hover { background: #eef2ff; color: #4f46e5; }
 
     .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
@@ -224,6 +168,25 @@
     .closures-table .add-hire-btn:hover { background: #eef2ff; border-color: #6366f1; }
     .closures-table .recruiter-select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; background: #fff; }
 
+    /* HR-метрики */
+    .metrics-wrap { }
+    .metrics-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; overflow-x: auto; }
+    .metrics-card h2 { font-size: 16px; margin-bottom: 8px; color: #374151; }
+    .metrics-hint { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+    .metrics-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+    .metrics-table th { background: #f9fafb; text-align: left; padding: 10px 12px; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; border-bottom: 2px solid #e5e7eb; white-space: nowrap; }
+    .metrics-table th.num { text-align: right; }
+    .metrics-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #1a1f36; vertical-align: middle; }
+    .metrics-table td.num { text-align: right; }
+    .metrics-table tr:hover td { background: #fafbfc; }
+    .metrics-table .metric-name { font-weight: 600; color: #1a1f36; }
+    .metrics-table input { width: 90px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-align: right; }
+    .metrics-table input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+    .metrics-table .status-cell { text-align: center; font-size: 16px; width: 60px; }
+    .metrics-table .year-row td { background: #f3f4f6; font-weight: 700; font-size: 14px; color: #4f46e5; padding: 8px 12px; border-bottom: none; }
+    
+    .kpi-period-select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; margin-bottom: 16px; background: #fff; cursor: pointer; }
+
     .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; background: #fff; border-radius: 14px; border: 2px dashed #e5e7eb; }
     .empty-state h3 { color: #6b7280; margin-bottom: 8px; font-size: 18px; }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
@@ -273,11 +236,7 @@
     .archive-hint { font-size: 12px; color: #6b7280; margin-bottom: 16px; }
     .hidden { display: none !important; }
 
-    .logout-btn {
-        background: #fff; border: 1px solid #e5e7eb; color: #6b7280;
-        padding: 8px 14px; border-radius: 8px; font-size: 13px;
-        font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
+    .logout-btn { background: #fff; border: 1px solid #e5e7eb; color: #6b7280; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .logout-btn:hover { background: #fee2e2; border-color: #ef4444; color: #dc2626; }
 </style>
 </head>
@@ -347,6 +306,9 @@
         <button class="tab" id="tabArchive" onclick="switchTab('archive')">
             📦 Архив <span class="count" id="countArchive">0</span>
         </button>
+        <button class="tab" id="tabMetrics" onclick="switchTab('metrics')">
+            📈 HR-метрики
+        </button>
     </div>
 
     <div id="archiveHint" class="archive-hint hidden">
@@ -377,6 +339,24 @@
         </div>
         <div class="closures-table-wrap">
             <div id="closuresTableWrap"></div>
+        </div>
+    </div>
+
+    <!-- Вкладка HR-метрики -->
+    <div id="viewMetrics" class="metrics-wrap hidden">
+        <div class="metrics-card">
+            <h2>🎯 План-факт: Стратегические метрики</h2>
+            <p class="metrics-hint">Заполните планы и факты. Статус рассчитывается автоматически (🟢 в плане, 🟡 отклонение, 🔴 хуже плана).</p>
+            <div id="strategicMetricsWrap"></div>
+        </div>
+
+        <div class="metrics-card">
+            <h2>📊 Промежуточные KPI (месяц)</h2>
+            <p class="metrics-hint">Опережающие индикаторы. Выберите месяц для просмотра и заполнения.</p>
+            <select class="kpi-period-select" id="kpiPeriodSelect" onchange="renderKpiMetrics()">
+                <!-- Заполняется в JS -->
+            </select>
+            <div id="kpiMetricsWrap"></div>
         </div>
     </div>
 
@@ -445,7 +425,6 @@
 const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
 
-// ПАРОЛЬ (в base64)
 const PASSWORD_B64 = 'MTIzNA==';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -465,7 +444,6 @@ const HOURLY_PARTICIPANTS = [
 ];
 const KPI_KEY = 'kpi';
 
-// Внешние статьи: alwaysVisible = показывать всегда (нельзя скрыть)
 const EXTERNAL_ITEMS = [
     { key: 'publication', label: 'Публикация вакансий', alwaysVisible: true },
     { key: 'agency', label: 'Кадровое агентство / фриланс', alwaysVisible: false },
@@ -477,6 +455,8 @@ const EXTERNAL_ITEMS = [
 ];
 
 let vacancies = [];
+let hrMetrics = [];
+let hrKpi = [];
 let monthlyChart = null;
 let compareChart = null;
 let realtimeChannel = null;
@@ -485,7 +465,24 @@ let currentTab = 'active';
 let modalHires = [];
 let hireDrafts = {};
 let activeEditKey = null;
-let addExtMenuOpen = {};  // { vacancyId: true/false } — открыто ли меню добавления расходов
+let addExtMenuOpen = {};
+
+const METRIC_NAMES = {
+    'turnover': 'Текучесть (добровольная)',
+    'fot_seo_prod': '% ФОТ / оборот — SEO произв.',
+    'fot_seo_mgr': '% ФОТ / оборот — SEO менедж.',
+    'fot_sup_prod': '% ФОТ / оборот — SUP произв.',
+    'fot_sup_mgr': '% ФОТ / оборот — SUP менедж.',
+    'fot_perf': '% ФОТ / оборот — PERF'
+};
+
+const KPI_NAMES = {
+    'meetings_mgr': 'Встречи с руководителями',
+    'meetings_emp': 'Встречи с сотрудниками',
+    'init_prop': 'Инициативы предложенные',
+    'init_impl': 'Инициативы внедрённые',
+    'training': 'Обучение (часов)'
+};
 
 function num(v) { return Math.max(0, Number(v) || 0); }
 function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
@@ -550,14 +547,13 @@ function logout() {
 function showDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    loadVacancies();
+    loadAllData();
     subscribeRealtime();
 }
 function isAuthenticated() {
     return sessionStorage.getItem('hr_auth') === 'ok';
 }
 
-// Нажатие Enter на экране входа
 document.addEventListener('DOMContentLoaded', () => {
     const pwd = document.getElementById('passwordInput');
     if (pwd) {
@@ -590,7 +586,6 @@ function calc(v) {
     const kpi = num(p[KPI_KEY]);
     internalSum += kpi;
 
-    // Внешние: считаем только ВИДИМЫЕ статьи
     const ext = v.external || {};
     let externalSum = 0;
     EXTERNAL_ITEMS.forEach(item => {
@@ -605,12 +600,23 @@ function calc(v) {
 }
 
 /* ===== Загрузка ===== */
-async function loadVacancies() {
+async function loadAllData() {
     setSync('syncing');
     try {
-        const { data, error } = await sb.from('vacancies').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        vacancies = data || [];
+        const [vRes, mRes, kRes] = await Promise.all([
+            sb.from('vacancies').select('*').order('created_at', { ascending: false }),
+            sb.from('hr_metrics').select('*'),
+            sb.from('hr_kpi').select('*')
+        ]);
+
+        if (vRes.error) throw vRes.error;
+        if (mRes.error) throw mRes.error;
+        if (kRes.error) throw kRes.error;
+
+        vacancies = vRes.data || [];
+        hrMetrics = mRes.data || [];
+        hrKpi = kRes.data || [];
+
         setSync('ok');
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
@@ -625,21 +631,23 @@ async function loadVacancies() {
 async function refreshData() {
     const btn = document.getElementById('refreshBtn');
     btn.disabled = true; btn.textContent = '⏳ Обновление...';
-    await loadVacancies();
+    await loadAllData();
     btn.disabled = false; btn.textContent = '🔄 Обновить';
     toast('Данные обновлены');
 }
 
 function subscribeRealtime() {
     if (realtimeChannel) sb.removeChannel(realtimeChannel);
-    realtimeChannel = sb.channel('vacancies-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'vacancies' }, () => { loadVacancies(); })
+    realtimeChannel = sb.channel('all-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'vacancies' }, () => { loadAllData(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hr_metrics' }, () => { loadAllData(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hr_kpi' }, () => { loadAllData(); })
         .subscribe();
 }
 
 function switchTab(tab) {
     currentTab = tab;
-    ['active', 'compare', 'closures', 'archive'].forEach(t => {
+    ['active', 'compare', 'closures', 'archive', 'metrics'].forEach(t => {
         const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         if (tabEl) tabEl.classList.toggle('active', t === tab);
     });
@@ -648,6 +656,7 @@ function switchTab(tab) {
     document.getElementById('viewCompare').classList.toggle('hidden', tab !== 'compare');
     document.getElementById('viewClosures').classList.toggle('hidden', tab !== 'closures');
     document.getElementById('viewArchive').classList.toggle('hidden', tab !== 'archive');
+    document.getElementById('viewMetrics').classList.toggle('hidden', tab !== 'metrics');
     render();
 }
 
@@ -693,8 +702,11 @@ function render() {
     renderClosuresTab();
     renderCompareChart();
     renderSummary();
+    renderStrategicMetrics();
+    renderKpiMetrics();
 }
 
+/* ===== Рендер карточек (без изменений) ===== */
 function renderCard(v) {
     const card = document.createElement('div');
     card.className = 'vacancy-card' + (isArchived(v) ? ' archived' : '');
@@ -720,7 +732,6 @@ function renderCard(v) {
         </tr>
     `).join('');
 
-    // Внешние расходы: видимые + меню добавления
     const ext = v.external || {};
     const visibleExternals = EXTERNAL_ITEMS.filter(i => isExternalVisible(v, i.key));
     const hiddenExternals = EXTERNAL_ITEMS.filter(i => !isExternalVisible(v, i.key));
@@ -796,7 +807,6 @@ function renderCard(v) {
     return card;
 }
 
-/* ===== Внешние: скрыть / показать ===== */
 function toggleAddExtMenu(vacancyId) {
     addExtMenuOpen[vacancyId] = !addExtMenuOpen[vacancyId];
     render();
@@ -828,7 +838,7 @@ async function showExternal(vacancyId, key) {
     render();
 }
 
-/* ===== Вкладка Закрытия ===== */
+/* ===== Вкладка Закрытия (без изменений) ===== */
 function renderClosuresTab() {
     renderAnalytics();
     renderClosuresTable();
@@ -1148,7 +1158,178 @@ async function removeHire(vacancyId, index) {
     else { setSync('ok'); toast('Сотрудник удалён'); render(); }
 }
 
-/* ===== Модалка ===== */
+/* ===== HR-МЕТРИКИ (НОВЫЙ БЛОК) ===== */
+
+function renderStrategicMetrics() {
+    const wrap = document.getElementById('strategicMetricsWrap');
+    if (!wrap) return;
+
+    // Группируем по metric_key
+    const grouped = {};
+    hrMetrics.forEach(m => {
+        if (!grouped[m.metric_key]) grouped[m.metric_key] = { plan: {}, fact: {} };
+        if (m.period_type === 'year') {
+            if (m.period_value.endsWith('2026')) {
+                grouped[m.metric_key].plan[2026] = m.plan_value;
+                grouped[m.metric_key].fact[2026] = m.fact_value;
+            }
+            if (m.period_value.endsWith('2027')) {
+                grouped[m.metric_key].plan[2027] = m.plan_value;
+                grouped[m.metric_key].fact[2027] = m.fact_value;
+            }
+        }
+    });
+
+    let html = '<table class="metrics-table"><thead><tr>';
+    html += '<th>Метрика</th>';
+    html += '<th class="num">План 2026</th>';
+    html += '<th class="num">Факт 2026</th>';
+    html += '<th class="num">План 2027</th>';
+    html += '<th class="num">Факт 2027</th>';
+    html += '<th class="status-cell">Статус</th>';
+    html += '</tr></thead><tbody>';
+
+    Object.keys(METRIC_NAMES).forEach(key => {
+        const data = grouped[key] || { plan: {}, fact: {} };
+        const plan26 = data.plan[2026] || 0;
+        const fact26 = data.fact[2026] || 0;
+        const plan27 = data.plan[2027] || 0;
+        const fact27 = data.fact[2027] || 0;
+
+        let status = '<span style="color:#d1d5db;">—</span>';
+        if (plan26 > 0 && fact26 > 0) {
+            if (fact26 <= plan26) status = '<span title="В плане">🟢</span>';
+            else if (fact26 <= plan26 * 1.1) status = '<span title="Небольшое отклонение">🟡</span>';
+            else status = '<span title="Хуже плана">🔴</span>';
+        }
+
+        html += `<tr>`;
+        html += `<td class="metric-name">${METRIC_NAMES[key]}</td>`;
+        // План 2026
+        html += `<td class="num"><input type="number" step="0.1" value="${plan26 || ''}" onchange="saveMetric('${key}', 2026, 'plan_value', this.value)"></td>`;
+        // Факт 2026
+        html += `<td class="num"><input type="number" step="0.1" value="${fact26 || ''}" onchange="saveMetric('${key}', 2026, 'fact_value', this.value)"></td>`;
+        // План 2027
+        html += `<td class="num"><input type="number" step="0.1" value="${plan27 || ''}" onchange="saveMetric('${key}', 2027, 'plan_value', this.value)"></td>`;
+        // Факт 2027
+        html += `<td class="num"><input type="number" step="0.1" value="${fact27 || ''}" onchange="saveMetric('${key}', 2027, 'fact_value', this.value)"></td>`;
+        // Статус
+        html += `<td class="status-cell">${status}</td>`;
+        html += `</tr>`;
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+}
+
+async function saveMetric(key, year, field, value) {
+    const v = Number(value) || 0;
+    const periodVal = String(year);
+    const existing = hrMetrics.find(m => m.metric_key === key && m.period_value === periodVal);
+
+    setSync('syncing');
+    if (existing) {
+        const { error } = await sb.from('hr_metrics').update({ [field]: v }).eq('id', existing.id);
+        if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+        existing[field] = v;
+    } else {
+        // Создаём
+        const { error } = await sb.from('hr_metrics').insert({
+            metric_key: key,
+            metric_type: 'strategic',
+            department: key.includes('seo') ? 'SEO' : key.includes('sup') ? 'SUP' : key.includes('perf') ? 'PERF' : '',
+            period_type: 'year',
+            period_value: periodVal,
+            [field]: v,
+            unit: '%'
+        });
+        if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+    }
+    setSync('ok');
+    // Перезагружать данные не нужно, UI уже обновился в input
+    renderStrategicMetrics(); // Пересчёт статусов
+}
+
+function renderKpiMetrics() {
+    const wrap = document.getElementById('kpiMetricsWrap');
+    const select = document.getElementById('kpiPeriodSelect');
+    if (!wrap || !select) return;
+
+    // Генерируем список месяцев (текущий и 5 предыдущих)
+    if (select.options.length === 0) {
+        const months = [];
+        const d = new Date();
+        for (let i = 0; i < 6; i++) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const val = `${year}-${month}`;
+            const names = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+            months.push({ val, label: names[d.getMonth()] + ' ' + year });
+            d.setMonth(d.getMonth() - 1);
+        }
+        select.innerHTML = months.map(m => `<option value="${m.val}">${m.label}</option>`).join('');
+    }
+
+    const period = select.value;
+    if (!period) return;
+
+    const grouped = {};
+    hrKpi.filter(k => k.period_value === period).forEach(k => {
+        grouped[k.kpi_key] = k;
+    });
+
+    let html = '<table class="metrics-table"><thead><tr>';
+    html += '<th>KPI</th>';
+    html += '<th class="num">План</th>';
+    html += '<th class="num">Факт</th>';
+    html += '<th class="num">Выполнение</th>';
+    html += '</tr></thead><tbody>';
+
+    Object.keys(KPI_NAMES).forEach(key => {
+        const data = grouped[key] || { plan_value: 0, fact_value: 0 };
+        const plan = data.plan_value || 0;
+        const fact = data.fact_value || 0;
+        let pct = '—';
+        if (plan > 0) {
+            const val = Math.round((fact / plan) * 100);
+            pct = `<span style="color:${val >= 100 ? '#10b981' : val >= 80 ? '#f59e0b' : '#ef4444'};font-weight:700;">${val}%</span>`;
+        }
+
+        html += `<tr>`;
+        html += `<td class="metric-name">${KPI_NAMES[key]}</td>`;
+        html += `<td class="num"><input type="number" value="${plan || ''}" onchange="saveKpi('${period}', '${key}', 'plan_value', this.value)"></td>`;
+        html += `<td class="num"><input type="number" value="${fact || ''}" onchange="saveKpi('${period}', '${key}', 'fact_value', this.value)"></td>`;
+        html += `<td class="num">${pct}</td>`;
+        html += `</tr>`;
+    });
+
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+}
+
+async function saveKpi(period, key, field, value) {
+    const v = Number(value) || 0;
+    const existing = hrKpi.find(k => k.kpi_key === key && k.period_value === period);
+
+    setSync('syncing');
+    if (existing) {
+        const { error } = await sb.from('hr_kpi').update({ [field]: v }).eq('id', existing.id);
+        if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+        existing[field] = v;
+    } else {
+        const { error } = await sb.from('hr_kpi').insert({
+            kpi_key: key,
+            period_value: period,
+            [field]: v,
+            unit: 'шт'
+        });
+        if (error) { setSync('error'); toast('Ошибка: ' + error.message); return; }
+    }
+    setSync('ok');
+    renderKpiMetrics();
+}
+
+/* ===== Остальные функции (модалка, экспорт и т.д. - без изменений) ===== */
 function onCloseDateChange() {
     const closeDate = document.getElementById('vacClose').value;
     const noHireRow = document.getElementById('noHireRow');
@@ -1345,7 +1526,7 @@ async function saveVacancy() {
             toast('Вакансия создана');
         }
         closeModal();
-        await loadVacancies();
+        await loadAllData();
     } catch (err) {
         console.error(err);
         toast('Ошибка: ' + (err.message || String(err)));
@@ -1362,7 +1543,7 @@ async function deleteVacancy(id) {
     const { error } = await sb.from('vacancies').delete().eq('id', id);
     if (error) { toast('Ошибка: ' + error.message); return; }
     toast('Вакансия удалена');
-    await loadVacancies();
+    await loadAllData();
 }
 
 async function restoreVacancy(id) {
@@ -1372,7 +1553,7 @@ async function restoreVacancy(id) {
     const { error } = await sb.from('vacancies').update({ close_date: null, closed_no_hire: false }).eq('id', id);
     if (error) { toast('Ошибка: ' + error.message); return; }
     toast('Вакансия возвращена в активные');
-    await loadVacancies();
+    await loadAllData();
 }
 
 function debouncedSave(id, patch) {
@@ -1559,7 +1740,6 @@ function exportData() {
             m.rows.forEach(r => detailRows.push([v.title, r.label + (r.multiplyByHires ? ' (× ' + r.hiresCount + ')' : ''), r.salary || '', r.hours || '', r.rate > 0 ? Math.round(r.rate * 100) / 100 : '', Math.round(r.cost)]));
             detailRows.push([v.title, 'KPI за выход кандидата', '', '', '', Math.round(m.kpi)]);
             detailRows.push([v.title, 'ИТОГО внутренние', '', '', '', Math.round(m.internalSum)]);
-            // Внешние — только видимые
             EXTERNAL_ITEMS.forEach(item => {
                 if (isExternalVisible(v, item.key)) {
                     const val = num((v.external || {})[item.key]);
