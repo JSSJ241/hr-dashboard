@@ -628,6 +628,8 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 
 async function saveVacancy() {
     const title = document.getElementById('vacTitle').value.trim();
+    const editId = document.getElementById('editId').value;
+    const v = editId ? vacancies.find(x => x.id === editId) : null;
     if (!title) { toast('Введите название позиции'); return; }
     const closeDate = document.getElementById('vacClose').value || null;
     const noHire = document.getElementById('vacNoHire').checked && closeDate;
@@ -659,18 +661,26 @@ async function saveVacancy() {
 
     const finalHires = num(document.getElementById('vacHires').value);
 
+        // Формируем данные строго в том порядке, в котором их ждет база
     const data = {
-        title,
+        title: title,
         dept: document.getElementById('vacDept').value.trim() || null,
         open_date: document.getElementById('vacOpen').value || null,
         close_date: closeDate,
         salary: num(document.getElementById('vacSalary').value),
         hires: finalHires,
         norm_hours: num(document.getElementById('vacHours').value) || 164,
+        participants: v ? v.participants : {}, // сохраняем старые участники
+        external: v ? v.external : {},         // сохраняем старые расходы
         recruiter_name: recruiterName,
         hires_data: cleanHires,
         closed_no_hire: noHire
     };
+
+    // Если у вакансии есть external_hidden, добавляем его
+    if (v && v.external_hidden) {
+        data.external_hidden = v.external_hidden;
+    }
 
     const editId = document.getElementById('editId').value;
     const btn = document.getElementById('saveBtn');
