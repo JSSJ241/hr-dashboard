@@ -512,7 +512,7 @@ function setSync(status) {
 // ===== ЛОГИКА ВАКАНСИЙ =====
 function getHiresCount(v) { return Array.isArray(v.hires_data) ? v.hires_data.length : 0; }
 function isArchived(v) { return !!v.close_date; }
-function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire; }
+function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire === true || (v.close_date && !v.closed_no_hire); }
 function getHiddenExternals(v) { return Array.isArray(v.external_hidden) ? v.external_hidden : []; }
 
 function isExternalVisible(v, key) {
@@ -1283,7 +1283,7 @@ async function saveVacancy() {
     const v = editId ? vacancies.find(x => x.id === editId) : null;
     if (!title) { toast('Введите название позиции'); return; }
     const closeDate = document.getElementById('vacClose').value || null;
-    const noHire = document.getElementById('vacNoHire').checked && closeDate;
+    const noHire = document.getElementById('vacNoHire').checked;
     const recruiterName = document.getElementById('vacRecruiter').value || null;
 
     let cleanHires = [];
