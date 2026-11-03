@@ -1331,13 +1331,17 @@ async function saveVacancy() {
         data.external_hidden = v.external_hidden;
     }
 
-    const btn = document.getElementById('saveBtn');
+        const btn = document.getElementById('saveBtn');
     btn.disabled = true; btn.textContent = 'Сохранение...';
     try {
+        let savedId = editId;
+        
+        // 1. Сохраняем ВСЁ, КРОМЕ closed_no_hire (чтобы база не путалась)
+        const { closed_no_hire, ...dataWithoutBoolean } = data;
+        
         if (editId) {
-            const { error } = await sb.from('vacancies').update(data).eq('id', editId);
+            const { error } = await sb.from('vacancies').update(dataWithoutBoolean).eq('id', editId);
             if (error) throw error;
-            toast('Вакансия обновлена');
         } else {
             const emptyParticipants = {};
             HOURLY_PARTICIPANTS.forEach(p => {
@@ -1345,15 +1349,23 @@ async function saveVacancy() {
                 emptyParticipants[p.key + '_hours'] = 0;
             });
             emptyParticipants[KPI_KEY] = 0;
-            const { error } = await sb.from('vacancies').insert({
-                ...data,
+            const { data: inserted, error } = await sb.from('vacancies').insert({
+                ...dataWithoutBoolean,
                 participants: emptyParticipants,
                 external: { publication:0, agency:0, referral:0, target:0, assessment:0, medical:0, other:0 },
                 external_hidden: []
-            });
+            }).select();
             if (error) throw error;
-            toast('Вакансия создана');
+            if (inserted && inserted.length > 0) savedId = inserted[0].id;
         }
+
+        // 2. ОТДЕЛЬНЫМ ЗАПРОСОМ сохраняем только галочку
+        if (savedId) {
+            const { error: boolError } = await sb.from('vacancies').update({ closed_no_hire: noHire }).eq('id', savedId);
+            if (boolError) console.error('Ошибка галочки:', boolError.message);
+        }
+
+        toast(editId ? 'Вакансия обновлена' : 'Вакансия создана');
         closeModal();
         await loadAllData();
     } catch (err) {
