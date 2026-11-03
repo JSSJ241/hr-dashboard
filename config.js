@@ -106,3 +106,8 @@ function setSync(status) {
     el.className = 'sync-badge' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
     el.textContent = status === 'syncing' ? 'Сохранение...' : status === 'error' ? 'Ошибка' : 'Готов';
 }
+
+function isArchived(v) { return !!v.close_date; }
+function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire; }
+function getHiresCount(v) { return Array.isArray(v.hires_data) ? v.hires_data.length : 0; 
+}
