@@ -20,7 +20,7 @@
 
 - `index.html` — стоимость найма, вакансии и HR-метрики;
 - `turnover.html` — текучесть, причины увольнений и отделы риска;
-- `supabase/turnover.sql` — таблицы `departments` и `terminations`;
+- `supabase/turnover_schema.sql` — таблицы `departments` и `terminations`;
 - данных хранятся в Supabase;
 - графики строятся через Chart.js.
 
@@ -32,7 +32,7 @@ python -m http.server 4174
 
 Затем откройте `http://127.0.0.1:4174/`.
 
-Перед использованием раздела текучести выполните `supabase/turnover.sql`
+Перед использованием раздела текучести выполните `supabase/turnover_schema.sql`
 в SQL Editor проекта Supabase.
 
 ## Публикация
