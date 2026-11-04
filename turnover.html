@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f1ec">
+  <title>Текучесть — HR Operations</title>
+  <meta name="description" content="Аналитика текучести, причин увольнений и отделов риска.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f1ec;
+      --ink: #20252c;
+      --muted: #747b84;
+      --line: #e6e1d9;
+      --surface: #fffdf9;
+      --surface-2: #f8f5ef;
+      --navy: #213344;
+      --coral: #df655e;
+      --coral-soft: #fae7e3;
+      --sage: #5f806d;
+      --sage-soft: #e5eee8;
+      --gold: #a97726;
+      --gold-soft: #f6ead2;
+      --violet: #6457a6;
+      --violet-soft: #ece9f7;
+      --shadow: 0 18px 55px rgba(58, 47, 39, .08);
+      --shadow-soft: 0 8px 24px rgba(58, 47, 39, .06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 22px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(223,101,94,.11), transparent 28rem),
+        radial-gradient(circle at 92% 14%, rgba(95,128,109,.12), transparent 30rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+    .shell { width: min(1420px, 100%); margin: 0 auto; }
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+      padding: 20px 24px;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 24px;
+      background: rgba(255,253,249,.82);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      width: max-content;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--sage-soft);
+      color: var(--sage);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 {
+      font-size: clamp(30px, 4vw, 44px);
+      line-height: 1;
+      letter-spacing: -.055em;
+    }
+    h2 { font-size: 17px; letter-spacing: -.025em; }
+    h3 { font-size: 12px; }
+    .subtitle {
+      max-width: 700px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .header-actions, .toolbar, .segmented {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 9px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--gold-soft);
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 800;
+      vertical-align: 1px;
+    }
+    .status::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status.on { color: var(--sage); background: var(--sage-soft); }
+    .status.off { color: var(--coral); background: var(--coral-soft); }
+    .btn {
+      min-height: 40px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 11px;
+      background: var(--navy);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 750;
+      transition: transform .16s ease, background .16s ease;
+    }
+    .btn:hover { transform: translateY(-1px); background: #172633; }
+    .btn.secondary {
+      border: 1px solid var(--line);
+      background: rgba(255,253,249,.9);
+      color: var(--ink);
+    }
+    .btn.secondary:hover { background: #fff; }
+    .btn.small { min-height: 32px; padding: 0 10px; font-size: 10px; }
+    .btn.danger { background: var(--coral); }
+    .toolbar {
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 16px;
+      background: rgba(255,253,249,.78);
+      box-shadow: var(--shadow-soft);
+    }
+    select, input {
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 11px;
+    }
+    select:focus, input:focus {
+      border-color: var(--violet);
+      box-shadow: 0 0 0 3px rgba(100,87,166,.11);
+    }
+    .toolbar .push { margin-left: auto; }
+    .notice {
+      display: none;
+      margin-bottom: 16px;
+      padding: 15px 18px;
+      border: 1px solid var(--coral-soft);
+      border-radius: 15px;
+      background: rgba(250,231,227,.8);
+      color: #8f3a36;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .notice.show { display: block; }
+    .notice code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(255,255,255,.65);
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi {
+      position: relative;
+      min-height: 96px;
+      padding: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-2);
+    }
+    .kpi::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--violet);
+    }
+    .kpi.red::before { background: var(--coral); }
+    .kpi.green::before { background: var(--sage); }
+    .kpi.amber::before { background: var(--gold); }
+    .kpi .label {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .kpi .value {
+      margin-top: 11px;
+      font-size: 25px;
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+    }
+    .kpi .delta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .card {
+      min-width: 0;
+      padding: 21px;
+      border: 1px solid rgba(255,255,255,.85);
+      border-radius: 22px;
+      background: rgba(255,253,249,.9);
+      box-shadow: var(--shadow-soft);
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .card-head p {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .chart-wrap { position: relative; height: 280px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    th {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 8px;
+      text-align: left;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    tr:hover td { background: #fbf8f3; }
+    .badge {
+      display: inline-flex;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .badge.voluntary { color: var(--coral); background: var(--coral-soft); }
+    .badge.employer { color: var(--gold); background: var(--gold-soft); }
+    .badge.agreement { color: var(--violet); background: var(--violet-soft); }
+    .badge.reduction { color: #6f4b8d; background: #f0e7f7; }
+    .badge.other { color: var(--muted); background: var(--surface-2); }
+    .empty, .loading {
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(29,24,22,.46);
+      backdrop-filter: blur(5px);
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      width: min(680px, 100%);
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: 0 28px 90px rgba(35,28,24,.24);
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-row label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .form-row input, .form-row select { width: 100%; }
+    .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    .value-input { display: flex; align-items: center; gap: 10px; }
+    .value-input input { flex: 1; min-width: 0; padding: 0; }
+    .value-input .num {
+      display: inline-grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--violet-soft);
+      color: var(--violet);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .table-wrap { overflow-x: auto; }
+    .table-wrap table { min-width: 960px; }
+    .value-bar {
+      width: 55px;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--line);
+    }
+    .value-bar span { display: block; height: 100%; border-radius: inherit; }
+    .muted { color: var(--muted); }
+    @media (max-width: 1040px) {
+      .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      body { padding: 12px; }
+      .topbar { align-items: stretch; flex-direction: column; padding: 17px; }
+      .header-actions .btn { flex: 1; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+      .card.full { grid-column: auto; }
+      .chart-wrap { height: 240px; }
+      .form-row { grid-template-columns: 1fr; }
+      .toolbar > * { flex: 1 1 150px; }
+      .toolbar .push { margin-left: 0; }
+    }
+    @media (max-width: 460px) {
+      .kpis { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">People operations</p>
+        <h1>Текучесть</h1>
+        <p class="subtitle">
+          Причины увольнений, отделы риска и динамика изменений.
+          <span class="status" id="connStatus">подключение…</span>
+        </p>
+      </div>
+      <div class="header-actions">
+        <a class="btn secondary" href="index.html">Стоимость найма</a>
+        <button class="btn secondary" id="logoutButton" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <div class="notice" id="setupNotice">
+      Для текучести ещё не подключены таблицы в общей базе. Выполните SQL из
+      <code>supabase/turnover.sql</code> в SQL Editor проекта Supabase.
+    </div>
+
+    <section class="toolbar" aria-label="Фильтры текучести">
+      <label class="sr-only" for="periodFilter">Период</label>
+      <select id="periodFilter">
+        <option value="12">Последние 12 месяцев</option>
+        <option value="6">Последние 6 месяцев</option>
+        <option value="3">Последние 3 месяца</option>
+        <option value="999">Всё время</option>
+      </select>
+      <label class="sr-only" for="departmentFilter">Отдел</label>
+      <select id="departmentFilter"></select>
+      <label class="sr-only" for="typeFilter">Тип увольнения</label>
+      <select id="typeFilter">
+        <option value="ALL">Все типы увольнений</option>
+        <option value="По инициативе сотрудника">По инициативе сотрудника</option>
+        <option value="По инициативе работодателя">По инициативе работодателя</option>
+        <option value="По соглашению сторон">По соглашению сторон</option>
+        <option value="Сокращение штата">Сокращение штата</option>
+        <option value="Окончание срока договора">Окончание срока договора</option>
+        <option value="Другое">Другое</option>
+      </select>
+      <button class="btn push" type="button" id="addButton">+ Добавить увольнение</button>
+      <button class="btn secondary small" type="button" id="exportButton">CSV</button>
+      <button class="btn secondary small" type="button" id="refreshButton">Обновить</button>
+    </section>
+
+    <div id="loading" class="loading">Загрузка данных…</div>
+
+    <div id="content" hidden>
+      <section class="kpis" id="kpis" aria-label="Показатели текучести"></section>
+
+      <div class="grid">
+        <section class="card">
+          <div class="card-head">
+            <div><h2>Динамика текучести</h2><p>Увольнения и расчётный процент по месяцам</p></div>
+          </div>
+          <div class="chart-wrap"><canvas id="trendChart" aria-label="Динамика текучести"></canvas></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div><h2>Причины увольнений</h2><p>Распределение по всем выбранным случаям</p></div>
+          </div>
+          <div class="chart-wrap"><canvas id="reasonChart" aria-label="Причины увольнений"></canvas></div>
+        </section>
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <div class="card-head">
+            <div><h2>Отделы риска</h2><p>Доля увольнений к текущей численности</p></div>
+          </div>
+          <div class="chart-wrap"><canvas id="departmentChart" aria-label="Текучесть по отделам"></canvas></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div><h2>Типы увольнений</h2><p>Добровольные, инициатива компании и другие основания</p></div>
+          </div>
+          <div class="chart-wrap"><canvas id="typeChart" aria-label="Типы увольнений"></canvas></div>
+        </section>
+      </div>
+
+      <section class="card full">
+        <div class="card-head">
+          <div><h2>Все записи</h2><p>Основания увольнений и ценность сотрудников</p></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Сотрудник</th>
+                <th>Отдел</th>
+                <th>Должность</th>
+                <th>Дата</th>
+                <th>Стаж</th>
+                <th>Причина</th>
+                <th>Тип</th>
+                <th>Ценность</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="termTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="modal" id="recordForm">
+      <div class="modal-head">
+        <div><p class="eyebrow">Карточка увольнения</p><h2 id="modalTitle">Добавить запись</h2></div>
+        <button class="btn secondary small" id="closeModalButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <input id="editId" type="hidden">
+      <div class="form-row">
+        <label>Сотрудник<input id="employeeName" required placeholder="Фамилия И.О."></label>
+        <label>Отдел<input id="employeeDept" required list="deptList" placeholder="Например, SEO-производство"><datalist id="deptList"></datalist></label>
+      </div>
+      <div class="form-row">
+        <label>Должность<input id="employeePosition" placeholder="Например, SEO-специалист"></label>
+        <label>Дата увольнения<input id="terminationDate" type="date" required></label>
+      </div>
+      <div class="form-row">
+        <label>Стаж, месяцев<input id="tenureMonths" type="number" min="0" value="12" required></label>
+        <label>Причина<select id="reasonSelect"></select></label>
+      </div>
+      <div class="form-row">
+        <label>Тип увольнения<select id="typeSelect"></select></label>
+        <label>Ценность сотрудника
+          <span class="value-input">
+            <input id="valueScore" type="range" min="1" max="10" value="5" step="1">
+            <output class="num" id="valueOutput">5</output>
+          </span>
+        </label>
+      </div>
+      <p class="hint">1 — легко заменить, 5 — средний вклад, 10 — критически важный сотрудник.</p>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelModalButton" type="button">Отмена</button>
+        <button class="btn" id="saveButton" type="submit">Сохранить</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    if (sessionStorage.getItem('hr_auth') !== 'ok') {
+      window.location.replace('index.html');
+    }
+
+    const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+
+    const REASONS = [
+      ['По собственному желанию', 'По инициативе сотрудника'],
+      ['Низкая зарплата', 'По инициативе сотрудника'],
+      ['Отсутствие роста и карьеры', 'По инициативе сотрудника'],
+      ['Переработки и выгорание', 'По инициативе сотрудника'],
+      ['Конфликт с руководством', 'По инициативе сотрудника'],
+      ['Переезд или смена города', 'По инициативе сотрудника'],
+      ['Смена сферы деятельности', 'По инициативе сотрудника'],
+      ['Выход на пенсию', 'По инициативе сотрудника'],
+      ['Низкая эффективность', 'По инициативе работодателя'],
+      ['Нарушение дисциплины', 'По инициативе работодателя'],
+      ['Не пройден испытательный срок', 'По инициативе работодателя'],
+      ['Сокращение штата', 'Сокращение штата'],
+      ['По соглашению сторон', 'По соглашению сторон'],
+      ['Окончание срока договора', 'Окончание срока договора'],
+      ['Другое', 'Другое']
+    ];
+    const TYPES = ['По инициативе сотрудника','По инициативе работодателя','По соглашению сторон','Сокращение штата','Окончание срока договора','Другое'];
+    const TYPE_COLORS = {
+      'По инициативе сотрудника': '#df655e',
+      'По инициативе работодателя': '#c1842f',
+      'По соглашению сторон': '#6457a6',
+      'Сокращение штата': '#8d6e9c',
+      'Окончание срока договора': '#5f806d',
+      'Другое': '#8b929a'
+    };
+
+    let records = [];
+    let departments = [];
+    let charts = {};
+
+    const $ = (id) => document.getElementById(id);
+    const moneyNumber = (value) => Number(value) || 0;
+    const esc = (value = '') => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const formatDate = (value) => value ? new Intl.DateTimeFormat('ru-RU').format(new Date(`${value}T12:00:00`)) : '—';
+
+    function setConnection(state, label) {
+      $('connStatus').className = `status ${state}`;
+      $('connStatus').textContent = label;
+    }
+
+    function showSetupError(message) {
+      const notice = $('setupNotice');
+      notice.innerHTML = `Не удалось загрузить данные текучести. Проверьте, что в проекте Supabase выполнены SQL-инструкции из <code>supabase/turnover.sql</code>. Техническая ошибка: ${esc(message)}`;
+      notice.classList.add('show');
+      $('loading').hidden = true;
+      $('content').hidden = true;
+      setConnection('off', 'ошибка подключения');
+    }
+
+    function initForm() {
+      $('reasonSelect').innerHTML = REASONS.map(([reason]) => `<option>${reason}</option>`).join('');
+      $('typeSelect').innerHTML = TYPES.map(type => `<option>${type}</option>`).join('');
+      $('reasonSelect').addEventListener('change', () => {
+        const selected = REASONS.find(([reason]) => reason === $('reasonSelect').value);
+        if (selected) $('typeSelect').value = selected[1];
+      });
+      $('valueScore').addEventListener('input', () => {
+        $('valueOutput').textContent = $('valueScore').value;
+      });
+    }
+
+    async function loadData() {
+      setConnection('', 'подключение…');
+      $('setupNotice').classList.remove('show');
+      $('loading').hidden = false;
+      $('content').hidden = true;
+      try {
+        const [departmentResult, terminationResult] = await Promise.all([
+          sb.from('departments').select('*').order('name'),
+          sb.from('terminations').select('*').order('date', { ascending: false })
+        ]);
+        if (departmentResult.error) throw departmentResult.error;
+        if (terminationResult.error) throw terminationResult.error;
+        departments = departmentResult.data || [];
+        records = (terminationResult.data || []).map(record => ({
+          ...record,
+          termination_type: record.termination_type || 'Другое',
+          value_score: record.value_score ?? 5
+        }));
+        fillDepartmentOptions();
+        $('loading').hidden = true;
+        $('content').hidden = false;
+        setConnection('on', 'данные актуальны');
+        render();
+      } catch (error) {
+        showSetupError(error.message || error);
+      }
+    }
+
+    function fillDepartmentOptions() {
+      const current = $('departmentFilter').value;
+      $('departmentFilter').innerHTML = '<option value="ALL">Все отделы</option>' +
+        departments.map(department => `<option value="${esc(department.name)}">${esc(department.name)} · ${department.employees} чел.</option>`).join('');
+      $('deptList').innerHTML = departments.map(department => `<option value="${esc(department.name)}">${department.employees} чел.</option>`).join('');
+      if ([...$('departmentFilter').options].some(option => option.value === current)) $('departmentFilter').value = current;
+    }
+
+    function filteredRecords() {
+      const department = $('departmentFilter').value;
+      const type = $('typeFilter').value;
+      const months = Number($('periodFilter').value);
+      const cutoff = months >= 999 ? new Date(0) : new Date(new Date().getFullYear(), new Date().getMonth() - months + 1, 1);
+      return records.filter(record => {
+        const matchesDepartment = department === 'ALL' || record.dept === department;
+        const matchesType = type === 'ALL' || record.termination_type === type;
+        const matchesPeriod = new Date(`${record.date}T12:00:00`) >= cutoff;
+        return matchesDepartment && matchesType && matchesPeriod;
+      });
+    }
+
+    function headcountFor(department) {
+      if (department === 'ALL') return departments.reduce((sum, item) => sum + Number(item.employees || 0), 0);
+      return Number(departments.find(item => item.name === department)?.employees || 0);
+    }
+
+    function annualTurnover(data, headcount, months) {
+      if (!headcount || !data.length) return 0;
+      const years = months >= 999 ? 1 : months / 12;
+      return data.length / headcount / years * 100;
+    }
+
+    function renderKpis(data) {
+      const department = $('departmentFilter').value;
+      const months = Number($('periodFilter').value);
+      const headcount = headcountFor(department);
+      const rate = annualTurnover(data, headcount, months);
+      const voluntary = data.filter(item => item.termination_type === 'По инициативе сотрудника').length;
+      const voluntaryShare = data.length ? Math.round(voluntary / data.length * 100) : 0;
+      const critical = data.filter(item => Number(item.value_score) >= 8).length;
+      const avgTenure = data.length ? data.reduce((sum, item) => sum + moneyNumber(item.tenure_months), 0) / data.length : 0;
+      const cards = [
+        ['Текучесть за период', `${rate.toFixed(1)}%`, 'годовой эквивалент', ''],
+        ['Уволено', String(data.length), `${voluntary} по инициативе сотрудника`, 'red'],
+        ['Добровольная доля', `${voluntaryShare}%`, 'от выбранных увольнений', 'amber'],
+        ['Критически важные', String(critical), 'оценка ценности 8–10', ''],
+        ['Средний стаж', `${avgTenure.toFixed(1)} мес`, 'на момент увольнения', 'green']
+      ];
+      $('kpis').innerHTML = cards.map(([label, value, delta, tone]) => `
+        <article class="kpi ${tone}">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+          <div class="delta">${delta}</div>
+        </article>`).join('');
+    }
+
+    function chartFrame() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#747b84', font: { size: 10 } } } },
+        scales: {
+          x: { ticks: { color: '#747b84', font: { size: 9 } }, grid: { color: 'rgba(116,123,132,.12)' } },
+          y: { beginAtZero: true, ticks: { color: '#747b84', font: { size: 9 } }, grid: { color: 'rgba(116,123,132,.12)' } }
+        }
+      };
+    }
+
+    function drawChart(key, config) {
+      if (charts[key]) charts[key].destroy();
+      const canvas = $(key);
+      if (!canvas) return;
+      charts[key] = new Chart(canvas, config);
+    }
+
+    function renderCharts(data) {
+      const months = Number($('periodFilter').value);
+      const countMonths = months >= 999 ? 12 : months;
+      const labels = [];
+      const keys = [];
+      for (let offset = countMonths - 1; offset >= 0; offset -= 1) {
+        const date = new Date(new Date().getFullYear(), new Date().getMonth() - offset, 1);
+        labels.push(new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(date));
+        keys.push(`${date.getFullYear()}-${date.getMonth()}`);
+      }
+      const counts = keys.map(key => data.filter(item => {
+        const date = new Date(`${item.date}T12:00:00`);
+        return `${date.getFullYear()}-${date.getMonth()}` === key;
+      }).length);
+      drawChart('trendChart', {
+        type: 'line',
+        data: { labels, datasets: [{
+          label: 'Увольнений', data: counts, borderColor: '#df655e',
+          backgroundColor: 'rgba(223,101,94,.12)', fill: true, tension: .35, pointRadius: 3
+        }] },
+        options: chartFrame()
+      });
+
+      const reasonCounts = {};
+      data.forEach(item => { reasonCounts[item.reason] = (reasonCounts[item.reason] || 0) + 1; });
+      const sortedReasons = Object.entries(reasonCounts).sort((a,b) => b[1] - a[1]).slice(0, 8);
+      drawChart('reasonChart', {
+        type: 'bar',
+        data: { labels: sortedReasons.map(([label]) => label), datasets: [{ data: sortedReasons.map(([,value]) => value), backgroundColor: '#6457a6', borderRadius: 6 }] },
+        options: { ...chartFrame(), indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+
+      const departmentLabels = departments.map(item => item.name);
+      const departmentRates = departments.map(item => {
+        const count = records.filter(record => record.dept === item.name && data.includes(record)).length;
+        return Number((count / Math.max(1, Number(item.employees)) * 100).toFixed(1));
+      });
+      drawChart('departmentChart', {
+        type: 'bar',
+        data: { labels: departmentLabels, datasets: [{ data: departmentRates, backgroundColor: '#5f806d', borderRadius: 6 }] },
+        options: { ...chartFrame(), plugins: { legend: { display: false } } }
+      });
+
+      const typeCounts = TYPES.map(type => data.filter(item => item.termination_type === type).length);
+      drawChart('typeChart', {
+        type: 'doughnut',
+        data: { labels: TYPES, datasets: [{ data: typeCounts, backgroundColor: TYPES.map(type => TYPE_COLORS[type]), borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#747b84', font: { size: 9 }, padding: 12 } } } }
+      });
+    }
+
+    function typeClass(type) {
+      if (type === 'По инициативе сотрудника') return 'voluntary';
+      if (type === 'По инициативе работодателя') return 'employer';
+      if (type === 'По соглашению сторон') return 'agreement';
+      if (type === 'Сокращение штата') return 'reduction';
+      return 'other';
+    }
+
+    function valueColor(value) {
+      if (value >= 8) return '#df655e';
+      if (value >= 6) return '#c1842f';
+      return '#5f806d';
+    }
+
+    function renderTable(data) {
+      $('termTableBody').innerHTML = data.length ? data.map(record => {
+        const value = Number(record.value_score) || 5;
+        return `<tr>
+          <td>${esc(record.name)}</td>
+          <td>${esc(record.dept)}</td>
+          <td>${esc(record.position || '—')}</td>
+          <td>${formatDate(record.date)}</td>
+          <td>${esc(record.tenure_months)} мес</td>
+          <td>${esc(record.reason)}</td>
+          <td><span class="badge ${typeClass(record.termination_type)}">${esc(record.termination_type)}</span></td>
+          <td><div class="value-bar" title="${value} из 10"><span style="width:${value * 10}%;background:${valueColor(value)}"></span></div></td>
+          <td>
+            <button class="btn secondary small" type="button" data-edit="${record.id}">Изменить</button>
+            <button class="btn secondary small" type="button" data-delete="${record.id}">Удалить</button>
+          </td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="9" class="empty">Нет записей за выбранный период.</td></tr>';
+    }
+
+    function render() {
+      const data = filteredRecords();
+      renderKpis(data);
+      renderCharts(data);
+      renderTable(data);
+    }
+
+    function setModal(record = null) {
+      $('modalTitle').textContent = record ? 'Редактировать запись' : 'Добавить запись';
+      $('editId').value = record?.id || '';
+      $('employeeName').value = record?.name || '';
+      $('employeeDept').value = record?.dept || '';
+      $('employeePosition').value = record?.position || '';
+      $('terminationDate').value = record?.date || new Date().toISOString().slice(0, 10);
+      $('tenureMonths').value = record?.tenure_months ?? 12;
+      $('reasonSelect').value = record?.reason || REASONS[0][0];
+      $('typeSelect').value = record?.termination_type || REASONS[0][1];
+      $('valueScore').value = record?.value_score ?? 5;
+      $('valueOutput').textContent = $('valueScore').value;
+      $('modalBg').classList.add('open');
+      $('employeeName').focus();
+    }
+
+    function closeModal() {
+      $('modalBg').classList.remove('open');
+    }
+
+    async function ensureDepartment(name) {
+      const existing = departments.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (existing) return existing.name;
+      const result = await sb.from('departments').insert({ name, employees: 1 }).select().single();
+      if (result.error) throw result.error;
+      departments.push(result.data);
+      fillDepartmentOptions();
+      return result.data.name;
+    }
+
+    async function saveRecord(event) {
+      event.preventDefault();
+      const id = $('editId').value;
+      const button = $('saveButton');
+      button.disabled = true;
+      button.textContent = 'Сохранение…';
+      try {
+        const reason = $('reasonSelect').value;
+        const suggested = REASONS.find(([item]) => item === reason)?.[1] || $('typeSelect').value;
+        const department = await ensureDepartment($('employeeDept').value.trim());
+        const payload = {
+          name: $('employeeName').value.trim(),
+          dept: department,
+          position: $('employeePosition').value.trim(),
+          date: $('terminationDate').value,
+          tenure_months: Number($('tenureMonths').value) || 0,
+          reason,
+          type: suggested,
+          termination_type: $('typeSelect').value,
+          value_score: Number($('valueScore').value) || 5
+        };
+        const result = id
+          ? await sb.from('terminations').update(payload).eq('id', id)
+          : await sb.from('terminations').insert(payload);
+        if (result.error) throw result.error;
+        closeModal();
+        await loadData();
+      } catch (error) {
+        alert(`Не удалось сохранить запись: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Сохранить';
+      }
+    }
+
+    async function deleteRecord(id) {
+      if (!confirm('Удалить запись об увольнении?')) return;
+      const result = await sb.from('terminations').delete().eq('id', id);
+      if (result.error) {
+        alert(`Не удалось удалить запись: ${result.error.message}`);
+        return;
+      }
+      await loadData();
+    }
+
+    function exportCsv() {
+      const data = filteredRecords();
+      const rows = [
+        ['Сотрудник','Отдел','Должность','Дата','Стаж, мес','Причина','Тип','Ценность'],
+        ...data.map(record => [record.name, record.dept, record.position || '', record.date, record.tenure_months, record.reason, record.termination_type, record.value_score])
+      ];
+      const csv = '\uFEFF' + rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `turnover-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    $('logoutButton').addEventListener('click', () => {
+      sessionStorage.removeItem('hr_auth');
+      window.location.replace('index.html');
+    });
+    $('addButton').addEventListener('click', () => setModal());
+    $('closeModalButton').addEventListener('click', closeModal);
+    $('cancelModalButton').addEventListener('click', closeModal);
+    $('modalBg').addEventListener('click', event => {
+      if (event.target === $('modalBg')) closeModal();
+    });
+    $('recordForm').addEventListener('submit', saveRecord);
+    $('refreshButton').addEventListener('click', loadData);
+    $('exportButton').addEventListener('click', exportCsv);
+    ['periodFilter', 'departmentFilter', 'typeFilter'].forEach(id => $(id).addEventListener('change', render));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeModal();
+    });
+    $('termTableBody').addEventListener('click', event => {
+      const editButton = event.target.closest('[data-edit]');
+      const deleteButton = event.target.closest('[data-delete]');
+      if (editButton) setModal(records.find(item => item.id === editButton.dataset.edit));
+      if (deleteButton) deleteRecord(deleteButton.dataset.delete);
+    });
+
+    initForm();
+    loadData();
+  </script>
+</body>
+</html>
