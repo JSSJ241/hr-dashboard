@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR Дашборд — Калькулятор стоимости найма</title>
+<title>HR Operations — аналитика найма</title>
+<meta name="description" content="Аналитика стоимости найма, офферов, вакансий и HR-метрик.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -216,19 +217,605 @@
     .login-error { color: #ef4444; font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; font-weight: 600; }
     .login-hint { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px; }
 </style>
+<style>
+    :root {
+        --bg: #f3f1ec;
+        --ink: #20252c;
+        --muted: #747b84;
+        --line: #e6e1d9;
+        --surface: #fffdf9;
+        --surface-2: #f8f5ef;
+        --navy: #213344;
+        --coral: #df655e;
+        --coral-soft: #fae7e3;
+        --sage: #5f806d;
+        --sage-soft: #e5eee8;
+        --gold: #a97726;
+        --gold-soft: #f6ead2;
+        --violet: #6457a6;
+        --violet-soft: #ece9f7;
+        --shadow: 0 18px 55px rgba(58, 47, 39, 0.08);
+        --shadow-soft: 0 8px 24px rgba(58, 47, 39, 0.06);
+    }
+
+    * { scrollbar-color: #cfc8bd transparent; }
+    body {
+        min-width: 320px;
+        padding: 22px;
+        background:
+            radial-gradient(circle at 10% 0%, rgba(223, 101, 94, 0.11), transparent 28rem),
+            radial-gradient(circle at 92% 14%, rgba(95, 128, 109, 0.12), transparent 30rem),
+            var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+        background-image: linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(to bottom, black, transparent 70%);
+    }
+    .container {
+        max-width: 1420px;
+        padding: 0;
+    }
+    #appScreen {
+        padding-bottom: 52px;
+    }
+    .topbar {
+        align-items: flex-end;
+        margin-bottom: 24px;
+    }
+    .topbar:first-child {
+        min-height: 90px;
+        padding: 20px 24px;
+        border: 1px solid rgba(255, 255, 255, .8);
+        border-radius: 24px;
+        background: rgba(255, 253, 249, .8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+    }
+    .topbar h1 {
+        margin-bottom: 7px;
+        color: var(--ink);
+        font-size: clamp(24px, 3vw, 38px);
+        line-height: 1.04;
+        letter-spacing: -0.045em;
+        font-weight: 760;
+    }
+    .topbar h1::before {
+        content: "People operations";
+        display: block;
+        width: max-content;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        color: var(--sage);
+        background: var(--sage-soft);
+        font-size: 9px;
+        line-height: 1;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        font-weight: 800;
+    }
+    .subtitle {
+        max-width: 680px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+    }
+    .sync-badge {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: var(--sage-soft);
+        color: var(--sage);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .03em;
+        vertical-align: 1px;
+    }
+    .sync-badge::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        margin-right: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 4px rgba(95, 128, 109, .12);
+    }
+    .last-updated {
+        margin-left: 9px;
+        color: var(--muted);
+        font-size: 9px;
+    }
+    .btn,
+    .logout-btn {
+        min-height: 40px;
+        border-radius: 11px;
+        box-shadow: none;
+        font-size: 11px;
+        font-weight: 750;
+        transition: transform .16s ease, background .16s ease, border-color .16s ease;
+    }
+    .btn:hover,
+    .logout-btn:hover {
+        transform: translateY(-1px);
+    }
+    .btn {
+        background: var(--navy);
+        color: #fff;
+    }
+    .btn:hover { background: #172633; }
+    .btn.secondary {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, .9);
+        color: var(--ink);
+    }
+    .btn.secondary:hover { background: #fff; border-color: #cfc7bb; }
+    .btn.danger { background: var(--coral); }
+    .btn.danger:hover { background: #c84f49; }
+    .btn.small { min-height: 32px; padding: 5px 10px; font-size: 10px; }
+    .logout-btn {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, .9);
+        color: var(--muted);
+    }
+    .logout-btn:hover {
+        border-color: var(--coral-soft);
+        background: var(--coral-soft);
+        color: var(--coral);
+    }
+    .topbar:nth-of-type(2) {
+        padding: 0 4px;
+        margin-top: -6px;
+    }
+    .summary-card,
+    .chart-card,
+    .analytics-card,
+    .closures-table-wrap,
+    .metrics-card {
+        border: 1px solid rgba(255, 255, 255, .85);
+        border-radius: 24px;
+        background: rgba(255, 253, 249, .88);
+        box-shadow: var(--shadow-soft);
+    }
+    .summary-card {
+        padding: 24px;
+        margin-bottom: 18px;
+    }
+    .summary-card > h2,
+    .chart-card h2,
+    .analytics-card h2,
+    .metrics-card h2 {
+        color: var(--ink);
+        font-size: 17px;
+        letter-spacing: -.025em;
+    }
+    .summary-card > h2 {
+        margin-bottom: 16px;
+    }
+    .summary-card > h2:first-child::after {
+        content: "Главные показатели и динамика затрат";
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+    .summary-kpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    .kpi-box {
+        position: relative;
+        min-height: 92px;
+        padding: 16px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-left: 0;
+        border-radius: 16px;
+        background: var(--surface-2);
+    }
+    .kpi-box::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: var(--violet);
+    }
+    .kpi-box.green::before { background: var(--sage); }
+    .kpi-box.orange::before { background: var(--gold); }
+    .kpi-box.red::before { background: var(--coral); }
+    .kpi-box .label {
+        margin-bottom: 10px;
+        color: var(--muted);
+        font-size: 9px;
+        letter-spacing: .09em;
+    }
+    .kpi-box .value {
+        color: var(--ink);
+        font-size: 25px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.04em;
+    }
+    .kpi-box .value.good { color: var(--sage); }
+    .kpi-box .value.warn { color: var(--gold); }
+    .kpi-box .value.bad { color: var(--coral); }
+    #monthlyChart {
+        width: 100% !important;
+        max-height: 270px;
+    }
+    .tabs {
+        position: sticky;
+        top: 12px;
+        z-index: 20;
+        gap: 5px;
+        margin-bottom: 18px;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, .8);
+        border-radius: 15px;
+        background: rgba(255, 253, 249, .87);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(16px);
+    }
+    .tab {
+        min-height: 38px;
+        margin: 0;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+    .tab:hover {
+        color: var(--ink);
+        background: var(--surface-2);
+    }
+    .tab.active {
+        border-bottom-color: transparent;
+        color: #fff;
+        background: var(--navy);
+        box-shadow: 0 8px 16px rgba(33, 51, 68, .18);
+    }
+    .tab .count {
+        margin-left: 6px;
+        border-radius: 999px;
+        background: var(--line);
+        color: var(--ink);
+    }
+    .tab.active .count {
+        background: rgba(255, 255, 255, .16);
+        color: #fff;
+    }
+    .archive-hint {
+        margin: 0 3px 16px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+    .vacancy-list {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+        gap: 16px;
+    }
+    .vacancy-card {
+        padding: 22px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, .85);
+        border-top: 4px solid var(--violet);
+        border-radius: 22px;
+        background: rgba(255, 253, 249, .92);
+        box-shadow: var(--shadow-soft);
+    }
+    .vacancy-card.archived {
+        border-top-color: var(--muted);
+        opacity: 1;
+        filter: saturate(.7);
+    }
+    .vacancy-header {
+        margin-bottom: 18px;
+    }
+    .vacancy-title {
+        color: var(--ink);
+        font-size: 18px;
+        letter-spacing: -.025em;
+    }
+    .vacancy-meta {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10px;
+    }
+    .hires-progress {
+        margin-top: 10px;
+        border-radius: 999px;
+        font-size: 9px;
+    }
+    .hires-progress.complete { background: var(--sage-soft); color: var(--sage); }
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-bottom: 14px;
+    }
+    .kpi-grid .kpi-box {
+        min-height: 80px;
+    }
+    .section {
+        margin-bottom: 12px;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--surface-2);
+    }
+    .section > .section:last-of-type,
+    .section:last-of-type {
+        margin-bottom: 0;
+    }
+    .section-title {
+        margin-bottom: 12px;
+        color: var(--muted);
+        font-size: 9px;
+        letter-spacing: .07em;
+    }
+    .participant-table {
+        font-size: 11px;
+    }
+    .participant-table th {
+        color: var(--muted);
+        font-size: 8px;
+    }
+    .participant-table td {
+        padding: 5px 3px;
+    }
+    .participant-table input,
+    .ext-row input,
+    .metrics-table input {
+        border-color: var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .8);
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+    }
+    .participant-table input:focus,
+    .ext-row input:focus,
+    .metrics-table input:focus {
+        border-color: var(--violet);
+        box-shadow: 0 0 0 3px rgba(100, 87, 166, .11);
+    }
+    .participant-table .name,
+    .participant-table .calc {
+        color: var(--ink);
+        font-size: 10px;
+    }
+    .participant-table .calc small {
+        color: var(--muted);
+    }
+    .participant-table tr.total-row .calc {
+        color: var(--violet);
+    }
+    .ext-row {
+        margin-bottom: 8px;
+    }
+    .ext-total {
+        border-top-color: var(--line);
+    }
+    .add-ext-btn,
+    .add-hire-modal-btn,
+    .closures-table .add-hire-btn {
+        border-color: #cdc6bc;
+        background: transparent;
+        color: var(--violet);
+        border-radius: 9px;
+    }
+    .add-ext-btn:hover,
+    .add-hire-modal-btn:hover,
+    .closures-table .add-hire-btn:hover {
+        border-color: var(--violet);
+        background: var(--violet-soft);
+    }
+    .vacancy-card .section[style*="background:#eef2ff"] {
+        border-color: rgba(100, 87, 166, .16) !important;
+        background: var(--violet-soft) !important;
+    }
+    .vacancy-card .section[style*="background:#eef2ff"] .val {
+        color: var(--violet) !important;
+    }
+    .chart-card,
+    .analytics-card,
+    .closures-table-wrap,
+    .metrics-card {
+        margin-bottom: 18px;
+        padding: 22px;
+    }
+    .analytics-kpis,
+    .summary-kpis { gap: 12px; }
+    .analytics-kpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .reasons-table,
+    .closures-table,
+    .metrics-table {
+        font-size: 11px;
+    }
+    .reasons-table th,
+    .closures-table th,
+    .metrics-table th {
+        background: var(--surface-2);
+        color: var(--muted);
+        border-bottom-color: var(--line);
+        font-size: 8px;
+        letter-spacing: .07em;
+    }
+    .reasons-table td,
+    .closures-table td,
+    .metrics-table td {
+        border-bottom-color: var(--line);
+    }
+    .closures-table tr:hover td,
+    .metrics-table tr:hover td {
+        background: #fbf8f3;
+    }
+    .status-active { background: var(--gold-soft); color: var(--gold); }
+    .status-closed { background: var(--sage-soft); color: var(--sage); }
+    .metrics-hint,
+    .chart-hint {
+        color: var(--muted);
+        font-size: 11px;
+    }
+    .metrics-table .metric-name { color: var(--ink); }
+    .metric-status {
+        display: inline-flex;
+        justify-content: center;
+        min-width: 84px;
+        padding: 5px 8px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+    .metric-status.good { background: var(--sage-soft); color: var(--sage); }
+    .metric-status.warn { background: var(--gold-soft); color: var(--gold); }
+    .metric-status.bad { background: var(--coral-soft); color: var(--coral); }
+    .kpi-period-select,
+    .recruiter-select {
+        min-height: 38px;
+        border-color: var(--line);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 11px;
+    }
+    .empty-state {
+        border-color: var(--line);
+        border-radius: 22px;
+        background: rgba(255, 253, 249, .7);
+        color: var(--muted);
+    }
+    .login-screen {
+        background:
+            radial-gradient(circle at 20% 10%, rgba(223, 101, 94, .17), transparent 24rem),
+            radial-gradient(circle at 80% 90%, rgba(95, 128, 109, .16), transparent 28rem),
+            var(--bg);
+    }
+    .login-card {
+        max-width: 440px;
+        padding: 34px;
+        border: 1px solid rgba(255, 255, 255, .88);
+        border-radius: 24px;
+        background: rgba(255, 253, 249, .92);
+        box-shadow: 0 28px 80px rgba(45, 36, 31, .14);
+        backdrop-filter: blur(18px);
+    }
+    .login-card .login-icon {
+        display: grid;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 18px;
+        place-items: center;
+        border-radius: 17px 17px 17px 6px;
+        background: var(--navy);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: .04em;
+    }
+    .login-card h1 {
+        color: var(--ink);
+        font-size: 26px;
+        letter-spacing: -.035em;
+    }
+    .login-card .login-sub,
+    .login-hint {
+        color: var(--muted);
+        font-size: 11px;
+    }
+    .login-card .login-sub {
+        margin-bottom: 23px;
+    }
+    .login-card input[type="password"] {
+        height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: var(--surface-2);
+        color: var(--ink);
+        font-size: 14px;
+    }
+    .login-card .login-btn {
+        min-height: 46px;
+        border-radius: 11px;
+        background: var(--navy);
+        font-size: 13px;
+    }
+    .login-card .login-btn:hover { background: #172633; }
+    .modal {
+        border-radius: 22px;
+        background: var(--surface);
+        box-shadow: 0 28px 90px rgba(35, 28, 24, .24);
+    }
+    .modal input,
+    .modal select {
+        border-color: var(--line);
+        border-radius: 9px;
+        background: var(--surface-2);
+        color: var(--ink);
+    }
+    .modal h3 {
+        color: var(--ink);
+        letter-spacing: -.02em;
+    }
+    .toast {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--navy);
+        color: #fff;
+        box-shadow: var(--shadow);
+        font-size: 11px;
+    }
+    @media (max-width: 940px) {
+        body { padding: 12px; }
+        .topbar:first-child { padding: 17px; }
+        .summary-kpis,
+        .analytics-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .tabs {
+            position: static;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .tab { white-space: nowrap; }
+    }
+    @media (max-width: 620px) {
+        .topbar { align-items: stretch; flex-direction: column; }
+        .topbar > div:last-child { flex-wrap: wrap; width: 100%; }
+        .summary-kpis,
+        .analytics-kpis,
+        .kpi-grid { grid-template-columns: 1fr; }
+        .summary-card,
+        .chart-card,
+        .analytics-card,
+        .closures-table-wrap,
+        .metrics-card { padding: 16px; border-radius: 18px; }
+        .vacancy-card { padding: 16px; border-radius: 18px; }
+    }
+</style>
 </head>
 <body>
 
 <!-- ЭКРАН ВХОДА -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
-        <div class="login-icon">🔐</div>
-        <h1>HR Дашборд</h1>
-        <p class="login-sub">Введите пароль для доступа</p>
+        <div class="login-icon" aria-hidden="true">HR</div>
+        <h1>HR Operations</h1>
+        <p class="login-sub">Аналитика найма и стоимости команды</p>
         <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="current-password" autofocus>
         <button class="login-btn" onclick="checkPassword()">Войти</button>
         <div class="login-error" id="loginError"></div>
-        <div class="login-hint">Доступ только для сотрудников HR-отдела</div>
+        <div class="login-hint">Доступ для HR-команды Пиксель Плюс</div>
     </div>
 </div>
 
@@ -239,55 +826,56 @@
 <div id="errorScreen" class="hidden"></div>
 
 <div id="appScreen" class="container hidden">
-    <div class="topbar">
+    <header class="topbar">
         <div>
-            <h1>📊 HR Дашборд — Калькулятор стоимости найма</h1>
+            <h1>Стоимость найма</h1>
             <p class="subtitle">
-                Оклад ÷ норма часов × часы = вклад в вакансию. HR-администрирование × число наймов.
-                <span class="sync-badge" id="syncBadge">Готов</span>
+                Оперативная аналитика по вакансиям, офферам и внутренним затратам команды.
+                <span class="sync-badge" id="syncBadge">Загружено</span>
+                <span class="last-updated" id="lastUpdated"></span>
             </p>
         </div>
-        <div style="display:flex; gap:8px;">
-            <a href="turnover.html" class="btn secondary" style="text-decoration:none;">📉 Текучесть</a>
-            <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn secondary" onclick="switchTab('metrics')">HR-метрики</button>
+            <button class="logout-btn" onclick="logout()">Выйти</button>
         </div>
-    </div>
+    </header>
 
     <div class="topbar">
-        <button class="btn" onclick="openModal()">+ Новая вакансия</button>
+        <button class="btn" onclick="openModal()">+ Добавить вакансию</button>
         <div style="display:flex; gap:8px;">
-            <button class="btn secondary small" onclick="exportData()">📥 Экспорт CSV</button>
-            <button class="btn secondary small" onclick="refreshData()" id="refreshBtn">🔄 Обновить</button>
+            <button class="btn secondary small" onclick="exportData()">Экспорт CSV</button>
+            <button class="btn secondary small" onclick="refreshData()" id="refreshBtn">Обновить данные</button>
         </div>
     </div>
 
     <div class="summary-card" id="summaryCard" style="display:none;">
-        <h2>📈 Сводка по всем вакансиям</h2>
+        <h2>Обзор найма</h2>
         <div class="summary-kpis">
-            <div class="kpi-box"><div class="label">Вакансий всего</div><div class="value" id="sumVacancies">0</div></div>
-            <div class="kpi-box green"><div class="label">Всего нанято</div><div class="value" id="sumHired">0</div></div>
+            <div class="kpi-box"><div class="label">Вакансий в работе</div><div class="value" id="sumVacancies">0</div></div>
+            <div class="kpi-box green"><div class="label">Приняли оффер</div><div class="value" id="sumHired">0</div></div>
             <div class="kpi-box orange"><div class="label">Средний Time to Hire</div><div class="value" id="sumTime">0 <span style="font-size:13px;color:#6b7280;">дн.</span></div></div>
-            <div class="kpi-box red"><div class="label">Средний Cost per Hire</div><div class="value" id="sumCost">0 <span style="font-size:13px;color:#6b7280;">₽</span></div></div>
+            <div class="kpi-box red"><div class="label">Стоимость на принятый оффер</div><div class="value" id="sumCost">0 <span style="font-size:13px;color:#6b7280;">₽</span></div></div>
         </div>
-        <h2 style="margin-top:20px;">💸 Затраты по месяцам (внутренние + внешние)</h2>
-        <canvas id="monthlyChart" height="70"></canvas>
+        <h2 style="margin-top:20px;">Динамика затрат</h2>
+        <canvas id="monthlyChart" height="70" aria-label="Затраты на найм по месяцам"></canvas>
     </div>
 
-    <div class="tabs">
-        <button class="tab active" id="tabActive" onclick="switchTab('active')">
+    <div class="tabs" role="tablist" aria-label="Разделы HR-дашборда">
+        <button class="tab active" id="tabActive" role="tab" aria-selected="true" onclick="switchTab('active')">
             Вакансии <span class="count" id="countActive">0</span>
         </button>
-        <button class="tab" id="tabCompare" onclick="switchTab('compare')">
-            📊 Сравнение
+        <button class="tab" id="tabCompare" role="tab" aria-selected="false" onclick="switchTab('compare')">
+            Сравнение
         </button>
-        <button class="tab" id="tabClosures" onclick="switchTab('closures')">
-            📋 Закрытия <span class="count" id="countClosures">0</span>
+        <button class="tab" id="tabClosures" role="tab" aria-selected="false" onclick="switchTab('closures')">
+            Закрытия <span class="count" id="countClosures">0</span>
         </button>
-        <button class="tab" id="tabArchive" onclick="switchTab('archive')">
-            📦 Архив <span class="count" id="countArchive">0</span>
+        <button class="tab" id="tabArchive" role="tab" aria-selected="false" onclick="switchTab('archive')">
+            Архив <span class="count" id="countArchive">0</span>
         </button>
-        <button class="tab" id="tabMetrics" onclick="switchTab('metrics')">
-            📈 HR-метрики
+        <button class="tab" id="tabMetrics" role="tab" aria-selected="false" onclick="switchTab('metrics')">
+            HR-метрики
         </button>
     </div>
 
@@ -295,14 +883,14 @@
         Здесь вакансии с указанной датой закрытия. Можно вернуть в активные кнопкой «↩️ Вернуть».
     </div>
 
-    <div id="viewActive" class="vacancy-list"></div>
-    <div id="viewArchive" class="vacancy-list hidden"></div>
+    <div id="viewActive" class="vacancy-list" role="tabpanel" aria-labelledby="tabActive"></div>
+    <div id="viewArchive" class="vacancy-list hidden" role="tabpanel" aria-labelledby="tabArchive"></div>
 
-    <div id="viewCompare" class="hidden">
+    <div id="viewCompare" class="hidden" role="tabpanel" aria-labelledby="tabCompare">
         <div class="chart-card">
-            <h2>📊 Сравнение затрат по вакансиям</h2>
+            <h2>Сравнение стоимости найма</h2>
             <p class="chart-hint">Полная стоимость найма (внутренние + внешние) по каждой вакансии</p>
-            <canvas id="compareChart" height="80"></canvas>
+            <canvas id="compareChart" height="80" aria-label="Сравнение затрат по вакансиям"></canvas>
             <div class="chart-legend">
                 <span><span class="dot" style="background:#6366f1;"></span>Активные</span>
                 <span><span class="dot" style="background:#9ca3af;"></span>Закрытые</span>
@@ -311,9 +899,9 @@
         </div>
     </div>
 
-    <div id="viewClosures" class="closures-wrap hidden">
+    <div id="viewClosures" class="closures-wrap hidden" role="tabpanel" aria-labelledby="tabClosures">
         <div class="analytics-card" id="analyticsCard">
-            <h2>📊 Аналитика офферов</h2>
+            <h2>Аналитика офферов</h2>
             <div class="analytics-kpis" id="analyticsKpis"></div>
             <div id="reasonsBlock"></div>
         </div>
@@ -323,15 +911,15 @@
     </div>
 
     <!-- Вкладка HR-метрики -->
-    <div id="viewMetrics" class="metrics-wrap hidden">
+    <div id="viewMetrics" class="metrics-wrap hidden" role="tabpanel" aria-labelledby="tabMetrics">
         <div class="metrics-card">
-            <h2>🎯 План-факт: Стратегические метрики</h2>
-            <p class="metrics-hint">Заполните планы и факты. Статус рассчитывается автоматически (🟢 в плане, 🟡 отклонение, 🔴 хуже плана).</p>
+            <h2>План-факт: стратегические метрики</h2>
+            <p class="metrics-hint">Заполните планы и факты. Статус рассчитывается автоматически: в плане, небольшое отклонение или хуже плана.</p>
             <div id="strategicMetricsWrap"></div>
         </div>
 
         <div class="metrics-card">
-            <h2>📊 Промежуточные KPI (месяц)</h2>
+            <h2>Промежуточные KPI за месяц</h2>
             <p class="metrics-hint">Опережающие индикаторы. Выберите месяц для просмотра и заполнения.</p>
             <select class="kpi-period-select" id="kpiPeriodSelect" onchange="renderKpiMetrics()">
                 <!-- Заполняется в JS -->
@@ -369,11 +957,11 @@
         <div class="input-group"><label>Норма рабочих часов в месяц</label><input type="number" id="vacHours" value="164" min="0"></div>
 
         <div class="closure-section" id="closureSection">
-            <div class="closure-title">👥 Нанятые сотрудники</div>
+            <div class="closure-title">Нанятые сотрудники</div>
 
             <div class="checkbox-row" id="noHireRow" style="display:none;">
                 <input type="checkbox" id="vacNoHire" onchange="onNoHireChange()">
-                <label for="vacNoHire">🚫 Закрыта без найма</label>
+                <label for="vacNoHire">Закрыта без найма</label>
             </div>
 
             <div id="hiresBlock">
@@ -407,7 +995,7 @@
 // ==========================================
 const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
-const PASSWORD_B64 = 'MTIzNA==';
+const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -506,7 +1094,7 @@ function setSync(status) {
     const el = document.getElementById('syncBadge');
     if (!el) return;
     el.className = 'sync-badge' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
-    el.textContent = status === 'syncing' ? 'Сохранение...' : status === 'error' ? 'Ошибка' : 'Готов';
+    el.textContent = status === 'syncing' ? 'Сохранение…' : status === 'error' ? 'Ошибка синхронизации' : 'Актуально';
 }
 
 // ===== ЛОГИКА ВАКАНСИЙ =====
@@ -566,11 +1154,13 @@ function showError(title, message, details) {
         '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипты выполнены в Supabase.</p></div>';
 }
 
-function checkPassword() {
+async function checkPassword() {
     const input = document.getElementById('passwordInput').value;
     const errorEl = document.getElementById('loginError');
-    const encoded = btoa(unescape(encodeURIComponent(input)));
-    if (encoded === PASSWORD_B64) {
+    const bytes = new TextEncoder().encode(input);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    if (hash === PASSWORD_HASH) {
         sessionStorage.setItem('hr_auth', 'ok');
         errorEl.textContent = '';
         showDashboard();
@@ -615,6 +1205,15 @@ async function loadAllData() {
         hrKpi = kRes.data || [];
 
         setSync('ok');
+        const updated = document.getElementById('lastUpdated');
+        if (updated) {
+            updated.textContent = 'Обновлено ' + new Intl.DateTimeFormat('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date());
+        }
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
         render();
@@ -627,9 +1226,9 @@ async function loadAllData() {
 
 async function refreshData() {
     const btn = document.getElementById('refreshBtn');
-    btn.disabled = true; btn.textContent = '⏳ Обновление...';
+    btn.disabled = true; btn.textContent = 'Обновление…';
     await loadAllData();
-    btn.disabled = false; btn.textContent = '🔄 Обновить';
+    btn.disabled = false; btn.textContent = 'Обновить данные';
     toast('Данные обновлены');
 }
 
@@ -646,7 +1245,10 @@ function switchTab(tab) {
     currentTab = tab;
     ['active', 'compare', 'closures', 'archive', 'metrics'].forEach(t => {
         const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
-        if (tabEl) tabEl.classList.toggle('active', t === tab);
+        if (tabEl) {
+            tabEl.classList.toggle('active', t === tab);
+            tabEl.setAttribute('aria-selected', String(t === tab));
+        }
     });
     document.getElementById('archiveHint').classList.toggle('hidden', tab !== 'archive');
     document.getElementById('viewActive').classList.toggle('hidden', tab !== 'active');
@@ -716,9 +1318,9 @@ function renderCard(v) {
     const planned = num(v.hires);
     const progressHtml = (hiredCount > 0 || planned > 1) && !v.closed_no_hire ? `
         <div class="hires-progress ${hiredCount >= planned ? 'complete' : ''}">
-            ${hiredCount >= planned ? '✅' : '🟡'} Нанято: ${hiredCount} из ${planned}
+            Нанято: ${hiredCount} из ${planned}
         </div>
-    ` : (v.closed_no_hire ? '<div class="hires-progress">🚫 Закрыта без найма</div>' : '');
+    ` : (v.closed_no_hire ? '<div class="hires-progress">Закрыта без найма</div>' : '');
 
     const participantRows = m.rows.map(r => `
         <tr>
@@ -765,9 +1367,9 @@ function renderCard(v) {
                 ${progressHtml}
             </div>
             <div class="vacancy-actions">
-                ${archived ? `<button class="btn secondary small" onclick="restoreVacancy('${v.id}')">↩️ Вернуть</button>` : ''}
-                <button class="btn secondary small" onclick="editVacancy('${v.id}')">✏️</button>
-                <button class="btn danger small" onclick="deleteVacancy('${v.id}')">🗑️</button>
+                ${archived ? `<button class="btn secondary small" onclick="restoreVacancy('${v.id}')">Вернуть</button>` : ''}
+                <button class="btn secondary small" onclick="editVacancy('${v.id}')" aria-label="Изменить вакансию ${esc(v.title)}">Изменить</button>
+                <button class="btn danger small" onclick="deleteVacancy('${v.id}')" aria-label="Удалить вакансию ${esc(v.title)}">Удалить</button>
             </div>
         </div>
         <div class="kpi-grid">
@@ -777,7 +1379,7 @@ function renderCard(v) {
             <div class="kpi-box red"><div class="label">Cost per Hire</div><div class="value ${costColor}">${fmt(m.costPerHire)} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
         </div>
         <div class="section">
-            <div class="section-title">👥 Внутренние затраты (оклад ÷ ${m.normHours} × часы)</div>
+            <div class="section-title">Внутренние затраты · оклад ÷ ${m.normHours} × часы</div>
             <table class="participant-table">
                 <thead><tr><th>Участник</th><th>Оклад, ₽/мес</th><th>Часы</th><th class="right">Вклад</th></tr></thead>
                 <tbody>
@@ -788,7 +1390,7 @@ function renderCard(v) {
             </table>
         </div>
         <div class="section">
-            <div class="section-title">💸 Внешние расходы</div>
+            <div class="section-title">Внешние расходы</div>
             ${extRows}
             <div class="ext-total"><label>Итого внешние</label><span class="val">${fmt(m.externalSum)} ₽</span></div>
             ${addBtnHtml}
@@ -874,15 +1476,15 @@ function renderAnalytics() {
             <div style="font-size:11px;color:#6b7280;margin-top:4px;">с наймом: ${closedWithHire} · без найма: ${closedNoHire}</div>
         </div>
         <div class="kpi-box green">
-            <div class="label">✅ Приняли оффер</div>
+            <div class="label">Приняли оффер</div>
             <div class="value">${accepted} <span style="font-size:13px;color:#6b7280;">(${acceptPct}%)</span></div>
         </div>
         <div class="kpi-box red">
-            <div class="label">❌ Отказались</div>
+            <div class="label">Отказались</div>
             <div class="value">${declined} <span style="font-size:13px;color:#6b7280;">(${declinePct}%)</span></div>
         </div>
         <div class="kpi-box orange">
-            <div class="label">🚫 Без найма</div>
+            <div class="label">Без найма</div>
             <div class="value">${closedNoHire}</div>
         </div>
     `;
@@ -943,18 +1545,18 @@ function renderClosuresTable() {
 
         let statusHtml = '';
         if (v.closed_no_hire) {
-            statusHtml = '<span class="status-closed">✅ Закрыта без найма</span>';
+            statusHtml = '<span class="status-closed">Закрыта без найма</span>';
         } else if (archived) {
-            statusHtml = '<span class="status-closed">✅ Закрыта ' + formatDate(v.close_date) + '</span>';
+            statusHtml = '<span class="status-closed">Закрыта ' + formatDate(v.close_date) + '</span>';
         } else {
-            statusHtml = '<span class="status-active">🟡 Нанято ' + hiredCount + ' из ' + planned + '</span>';
+            statusHtml = '<span class="status-active">Нанято ' + hiredCount + ' из ' + planned + '</span>';
         }
 
         html += '<tr data-vacancy-id="' + v.id + '">';
         html += '<td class="vacancy-cell">' + esc(v.title) + (v.dept ? '<span class="vacancy-dept">' + esc(v.dept) + '</span>' : '') + '</td>';
         html += '<td>' + statusHtml + '</td>';
         html += '<td>' + renderRecruiterSelect(v) + '</td>';
-        html += '<td>' + (v.closed_no_hire ? '<span class="no-hire-badge">🚫 Без найма</span>' : renderHiresCell(v, hires)) + '</td>';
+        html += '<td>' + (v.closed_no_hire ? '<span class="no-hire-badge">Без найма</span>' : renderHiresCell(v, hires)) + '</td>';
         html += '</tr>';
     });
 
@@ -986,7 +1588,7 @@ function renderHiresCell(v, hires) {
 
 function renderHireView(v, h, i) {
     const offerClass = h.offer === 'accepted' ? 'offer-accepted' : h.offer === 'declined' ? 'offer-declined' : 'offer-pending';
-    const offerText = h.offer === 'accepted' ? '✅ Принял' : h.offer === 'declined' ? '❌ Не принял' : '⏳ Не указано';
+    const offerText = h.offer === 'accepted' ? 'Принял' : h.offer === 'declined' ? 'Не принял' : 'Не указано';
     const displayName = h.name || '— без имени —';
     const displayDate = h.exit_date ? formatDate(h.exit_date) : '—';
     const reasonText = (h.offer === 'declined' && h.decline_reason)
@@ -1003,8 +1605,8 @@ function renderHireView(v, h, i) {
                 </div>
             </div>
             <div class="hire-view-actions">
-                <button onclick="startEditHire('${v.id}', ${i})" title="Редактировать">✏️</button>
-                <button class="del" onclick="removeHire('${v.id}', ${i})" title="Удалить">🗑️</button>
+                <button onclick="startEditHire('${v.id}', ${i})" title="Редактировать" aria-label="Редактировать кандидата">Изменить</button>
+                <button class="del" onclick="removeHire('${v.id}', ${i})" title="Удалить" aria-label="Удалить кандидата">Удалить</button>
             </div>
         </div>
     `;
@@ -1033,12 +1635,12 @@ function renderHireEdit(v, h, i) {
                     <label class="${acceptedChecked ? 'accepted-checked' : ''}">
                         <input type="radio" name="offer_${v.id}_${i}" value="accepted" ${acceptedChecked ? 'checked' : ''}
                             onchange="setDraftField('${v.id}', ${i}, 'offer', 'accepted'); setDraftField('${v.id}', ${i}, 'decline_reason', ''); renderClosuresTable();">
-                        ✅ Принял
+                        Принял
                     </label>
                     <label class="${declinedChecked ? 'declined-checked' : ''}">
                         <input type="radio" name="offer_${v.id}_${i}" value="declined" ${declinedChecked ? 'checked' : ''}
                             onchange="setDraftField('${v.id}', ${i}, 'offer', 'declined'); renderClosuresTable();">
-                        ❌ Не принял
+                        Не принял
                     </label>
                 </div>
             </div>
@@ -1186,7 +1788,7 @@ function renderModalHires() {
                 <div class="hire-editor-header">
                     <input type="text" placeholder="Имя сотрудника" value="${esc(h.name || '')}"
                         onchange="modalHires[${i}].name = this.value">
-                    <button type="button" class="remove-hire-btn" onclick="removeHireInModal(${i})" title="Удалить">🗑️</button>
+                    <button type="button" class="remove-hire-btn" onclick="removeHireInModal(${i})" title="Удалить" aria-label="Удалить кандидата">×</button>
                 </div>
                 <div class="hire-editor-row">
                     <label>Выход:</label>
@@ -1198,12 +1800,12 @@ function renderModalHires() {
                         <label class="${acceptedChecked ? 'accepted-checked' : ''}">
                             <input type="radio" name="offer_m_${i}" value="accepted" ${acceptedChecked ? 'checked' : ''}
                                 onchange="modalHires[${i}].offer = 'accepted'; modalHires[${i}].decline_reason = ''; renderModalHires();">
-                            ✅ Принял
+                            Принял
                         </label>
                         <label class="${declinedChecked ? 'declined-checked' : ''}">
                             <input type="radio" name="offer_m_${i}" value="declined" ${declinedChecked ? 'checked' : ''}
                                 onchange="modalHires[${i}].offer = 'declined'; renderModalHires();">
-                            ❌ Не принял
+                            Не принял
                         </label>
                     </div>
                 </div>
@@ -1486,17 +2088,21 @@ function renderCompareChart() {
 }
 
 function renderSummary() {
-    const active = vacancies.length;
-    const totalHired = vacancies.reduce((s, v) => s + num(v.hires), 0);
-    const daysArr = vacancies.map(v => daysBetween(v.open_date, v.close_date)).filter(d => d > 0);
+    const active = vacancies.filter(v => !isArchived(v)).length;
+    const acceptedHires = vacancies.reduce((sum, v) => {
+        const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
+        return sum + hires.filter(h => h.offer === 'accepted').length;
+    }, 0);
+    const closed = vacancies.filter(isArchived).length;
+    const daysArr = vacancies.filter(isArchived).map(v => daysBetween(v.open_date, v.close_date)).filter(d => d > 0);
     const avgTime = daysArr.length ? daysArr.reduce((a,b) => a+b, 0) / daysArr.length : 0;
-    const costsArr = vacancies.filter(v => calc(v).hires > 0 && calc(v).total > 0).map(v => calc(v).costPerHire);
-    const avgCost = costsArr.length ? costsArr.reduce((a,b) => a+b, 0) / costsArr.length : 0;
+    const totalCost = vacancies.reduce((sum, v) => sum + calc(v).total, 0);
+    const costPerAccepted = acceptedHires > 0 ? totalCost / acceptedHires : 0;
 
     document.getElementById('sumVacancies').textContent = active;
-    document.getElementById('sumHired').textContent = totalHired;
-    document.getElementById('sumTime').innerHTML = Math.round(avgTime) + ' <span style="font-size:13px;color:#6b7280;">дн.</span>';
-    document.getElementById('sumCost').innerHTML = fmt(avgCost) + ' <span style="font-size:13px;color:#6b7280;">₽</span>';
+    document.getElementById('sumHired').textContent = acceptedHires;
+    document.getElementById('sumTime').innerHTML = (daysArr.length ? Math.round(avgTime) : '—') + ' <span style="font-size:13px;color:#6b7280;">дн.</span>';
+    document.getElementById('sumCost').innerHTML = (acceptedHires ? fmt(costPerAccepted) : '—') + ' <span style="font-size:13px;color:#6b7280;">₽</span>';
 
     const byMonth = {};
     vacancies.forEach(v => {
@@ -1578,9 +2184,9 @@ function renderStrategicMetrics() {
 
         let status = '<span style="color:#d1d5db;">—</span>';
         if (plan26 > 0 && fact26 > 0) {
-            if (fact26 <= plan26) status = '<span title="В плане">🟢</span>';
-            else if (fact26 <= plan26 * 1.1) status = '<span title="Небольшое отклонение">🟡</span>';
-            else status = '<span title="Хуже плана">🔴</span>';
+            if (fact26 <= plan26) status = '<span class="metric-status good" title="В плане">В плане</span>';
+            else if (fact26 <= plan26 * 1.1) status = '<span class="metric-status warn" title="Небольшое отклонение">Отклонение</span>';
+            else status = '<span class="metric-status bad" title="Хуже плана">Хуже плана</span>';
         }
 
         html += `<tr>`;
