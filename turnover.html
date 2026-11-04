@@ -133,6 +133,7 @@
     .btn.secondary:hover { background: #fff; }
     .btn.small { min-height: 32px; padding: 0 10px; font-size: 10px; }
     .btn.danger { background: var(--coral); }
+    button:disabled { opacity: .48; cursor: not-allowed; transform: none; }
     .toolbar {
       margin-bottom: 16px;
       padding: 12px;
@@ -583,11 +584,14 @@
 
     function showSetupError(message) {
       const notice = $('setupNotice');
-      notice.innerHTML = `Не удалось загрузить данные текучести. Проверьте, что в проекте Supabase выполнены SQL-инструкции из <code>supabase/turnover_schema.sql</code>. Техническая ошибка: ${esc(message)}`;
+      console.error('Turnover setup error:', message);
+      notice.innerHTML = 'Раздел текучести подготовлен, но таблицы ещё не подключены к общей базе. Администратору нужно выполнить <code>supabase/turnover_schema.sql</code> в SQL Editor проекта Supabase.';
       notice.classList.add('show');
       $('loading').hidden = true;
       $('content').hidden = true;
-      setConnection('off', 'ошибка подключения');
+      $('addButton').disabled = true;
+      $('exportButton').disabled = true;
+      setConnection('off', 'требуется настройка');
     }
 
     function initForm() {
@@ -621,6 +625,8 @@
           value_score: record.value_score ?? 5
         }));
         fillDepartmentOptions();
+        $('addButton').disabled = false;
+        $('exportButton').disabled = false;
         $('loading').hidden = true;
         $('content').hidden = false;
         setConnection('on', 'данные актуальны');
