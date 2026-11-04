@@ -1099,6 +1099,9 @@ function setSync(status) {
 
 // ===== ЛОГИКА ВАКАНСИЙ =====
 function getHiresCount(v) { return Array.isArray(v.hires_data) ? v.hires_data.length : 0; }
+function getAcceptedHiresCount(v) {
+    return Array.isArray(v.hires_data) ? v.hires_data.filter(h => h.offer === 'accepted').length : 0;
+}
 function isArchived(v) { return !!v.close_date; }
 function isInClosures(v) { return getHiresCount(v) > 0 || v.closed_no_hire === true || (v.close_date && !v.closed_no_hire); }
 function getHiddenExternals(v) { return Array.isArray(v.external_hidden) ? v.external_hidden : []; }
@@ -1311,10 +1314,12 @@ function renderCard(v) {
     card.className = 'vacancy-card' + (isArchived(v) ? ' archived' : '');
     const m = calc(v);
     const days = daysBetween(v.open_date, v.close_date);
-    const costColor = m.costPerHire === 0 ? '' : m.costPerHire <= 30000 ? 'good' : m.costPerHire <= 60000 ? 'warn' : 'bad';
+    const acceptedHires = getAcceptedHiresCount(v);
+    const costPerAccepted = acceptedHires > 0 ? m.total / acceptedHires : 0;
+    const costColor = costPerAccepted === 0 ? '' : costPerAccepted <= 30000 ? 'good' : costPerAccepted <= 60000 ? 'warn' : 'bad';
     const archived = isArchived(v);
 
-    const hiredCount = getHiresCount(v);
+    const hiredCount = acceptedHires;
     const planned = num(v.hires);
     const progressHtml = (hiredCount > 0 || planned > 1) && !v.closed_no_hire ? `
         <div class="hires-progress ${hiredCount >= planned ? 'complete' : ''}">
@@ -1374,9 +1379,9 @@ function renderCard(v) {
         </div>
         <div class="kpi-grid">
             <div class="kpi-box"><div class="label">Оклад по вакансии</div><div class="value">${fmt(num(v.salary))} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
-            <div class="kpi-box green"><div class="label">Число наймов</div><div class="value">${m.hires}</div></div>
+            <div class="kpi-box green"><div class="label">План найма</div><div class="value">${m.hires}</div></div>
             <div class="kpi-box orange"><div class="label">Полная стоимость</div><div class="value">${fmt(m.total)} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
-            <div class="kpi-box red"><div class="label">Cost per Hire</div><div class="value ${costColor}">${fmt(m.costPerHire)} <span style="font-size:12px;color:#6b7280;">₽</span></div></div>
+            <div class="kpi-box red"><div class="label">Стоимость на принятый оффер</div><div class="value ${costColor}">${acceptedHires > 0 ? fmt(costPerAccepted) + ' <span style="font-size:12px;color:#6b7280;">₽</span>' : '—'}</div></div>
         </div>
         <div class="section">
             <div class="section-title">Внутренние затраты · оклад ÷ ${m.normHours} × часы</div>
@@ -2089,10 +2094,7 @@ function renderCompareChart() {
 
 function renderSummary() {
     const active = vacancies.filter(v => !isArchived(v)).length;
-    const acceptedHires = vacancies.reduce((sum, v) => {
-        const hires = Array.isArray(v.hires_data) ? v.hires_data : [];
-        return sum + hires.filter(h => h.offer === 'accepted').length;
-    }, 0);
+    const acceptedHires = vacancies.reduce((sum, v) => sum + getAcceptedHiresCount(v), 0);
     const closed = vacancies.filter(isArchived).length;
     const daysArr = vacancies.filter(isArchived).map(v => daysBetween(v.open_date, v.close_date)).filter(d => d > 0);
     const avgTime = daysArr.length ? daysArr.reduce((a,b) => a+b, 0) / daysArr.length : 0;
@@ -2326,7 +2328,7 @@ function downloadCSV(filename, rows) {
 function exportData() {
     if (vacancies.length === 0) { toast('Нет данных для экспорта'); return; }
     const date = new Date().toISOString().slice(0,10);
-    const summaryRows = [['Статус','Без найма','Название позиции','Отдел','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','Число наймов','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Cost per Hire, ₽','Рекрутер','Нанятые сотрудники']];
+    const summaryRows = [['Статус','Без найма','Название позиции','Отдел','Дата открытия','Дата закрытия','Дней в работе','Оклад по вакансии, ₽/мес','План найма','Приняли оффер','Итого внутренние, ₽','Итого внешние, ₽','Полная стоимость, ₽','Стоимость на принятый оффер, ₽','Рекрутер','Кандидаты и офферы']];
     vacancies.forEach(v => {
         const m = calc(v);
         const hiresStr = (Array.isArray(v.hires_data) ? v.hires_data : []).map(h => {
@@ -2337,13 +2339,14 @@ function exportData() {
             }
             return s;
         }).join('; ');
+        const acceptedHires = getAcceptedHiresCount(v);
         summaryRows.push([
             isArchived(v) ? 'Закрыта' : 'Активная',
             v.closed_no_hire ? 'Да' : 'Нет',
             v.title, v.dept || '', v.open_date || '', v.close_date || '',
-            daysBetween(v.open_date, v.close_date), num(v.salary), m.hires,
+            daysBetween(v.open_date, v.close_date), num(v.salary), m.hires, acceptedHires,
             Math.round(m.internalSum), Math.round(m.externalSum),
-            Math.round(m.total), Math.round(m.costPerHire),
+            Math.round(m.total), acceptedHires > 0 ? Math.round(m.total / acceptedHires) : '',
             v.recruiter_name || '', hiresStr
         ]);
     });
