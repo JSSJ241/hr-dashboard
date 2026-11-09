@@ -330,6 +330,32 @@
       font-weight: 700;
     }
     .form-row input, .form-row select { width: 100%; }
+    .department-editor {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .department-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+    .department-row strong {
+      display: block;
+      font-size: 11px;
+    }
+    .department-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .department-row input { width: 100%; }
     .hint {
       margin-top: 6px;
       color: var(--muted);
@@ -429,6 +455,7 @@
         <option value="Другое">Другое</option>
       </select>
       <button class="btn push" type="button" id="addButton">+ Добавить увольнение</button>
+      <button class="btn secondary small" type="button" id="departmentsButton">Отделы</button>
       <button class="btn secondary small" type="button" id="exportButton">CSV</button>
       <button class="btn secondary small" type="button" id="refreshButton">Обновить</button>
     </section>
@@ -530,6 +557,29 @@
     </form>
   </div>
 
+  <div class="modal-bg" id="departmentsModalBg" role="dialog" aria-modal="true" aria-labelledby="departmentsModalTitle">
+    <form class="modal" id="departmentsForm">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Справочник</p>
+          <h2 id="departmentsModalTitle">Отделы и численность</h2>
+        </div>
+        <button class="btn secondary small" id="closeDepartmentsButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <p class="hint">Численность используется как знаменатель в расчёте текучести. Указывайте актуальное количество сотрудников в каждом отделе.</p>
+      <div class="department-editor" id="departmentRows"></div>
+      <div class="form-row">
+        <label>Новый отдел<input id="newDepartmentName" placeholder="Например, SEO-производство"></label>
+        <label>Численность, чел.<input id="newDepartmentEmployees" type="number" min="1" step="1" value="1"></label>
+      </div>
+      <p class="hint">Новый отдел можно добавить вместе с численностью. Удаление отделов не предусмотрено, чтобы не разорвать историю увольнений.</p>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelDepartmentsButton" type="button">Отмена</button>
+        <button class="btn" id="saveDepartmentsButton" type="submit">Сохранить численность</button>
+      </div>
+    </form>
+  </div>
+
   <script>
     if (sessionStorage.getItem('hr_auth') !== 'ok') {
       window.location.replace('index.html');
@@ -590,6 +640,7 @@
       $('loading').hidden = true;
       $('content').hidden = true;
       $('addButton').disabled = true;
+      $('departmentsButton').disabled = true;
       $('exportButton').disabled = true;
       setConnection('off', 'требуется настройка');
     }
@@ -626,6 +677,7 @@
         }));
         fillDepartmentOptions();
         $('addButton').disabled = false;
+        $('departmentsButton').disabled = false;
         $('exportButton').disabled = false;
         $('loading').hidden = true;
         $('content').hidden = false;
@@ -823,6 +875,76 @@
       $('modalBg').classList.remove('open');
     }
 
+    function renderDepartmentEditor() {
+      const sorted = [...departments].sort((left, right) => left.name.localeCompare(right.name, 'ru'));
+      $('departmentRows').innerHTML = sorted.length
+        ? sorted.map(department => `
+          <label class="department-row">
+            <span>
+              <strong>${esc(department.name)}</strong>
+              <small>Текущее значение: ${department.employees} чел.</small>
+            </span>
+            <input type="number" min="1" step="1" required
+              data-department-id="${esc(department.id)}"
+              value="${Number(department.employees) || 1}"
+              aria-label="Численность отдела ${esc(department.name)}">
+          </label>`).join('')
+        : '<p class="hint">Отделы появятся здесь после первого добавления или создайте новый ниже.</p>';
+      $('newDepartmentName').value = '';
+      $('newDepartmentEmployees').value = 1;
+    }
+
+    function openDepartments() {
+      renderDepartmentEditor();
+      $('departmentsModalBg').classList.add('open');
+      $('newDepartmentName').focus();
+    }
+
+    function closeDepartments() {
+      $('departmentsModalBg').classList.remove('open');
+    }
+
+    async function saveDepartments(event) {
+      event.preventDefault();
+      const button = $('saveDepartmentsButton');
+      button.disabled = true;
+      button.textContent = 'Сохранение…';
+      try {
+        const updates = [...$('departmentRows').querySelectorAll('[data-department-id]')]
+          .map(input => ({
+            id: input.dataset.departmentId,
+            employees: Number(input.value)
+          }))
+          .filter(item => Number.isInteger(item.employees) && item.employees > 0);
+
+        for (const update of updates) {
+          const result = await sb.from('departments').update({ employees: update.employees }).eq('id', update.id);
+          if (result.error) throw result.error;
+        }
+
+        const newName = $('newDepartmentName').value.trim();
+        const newEmployees = Number($('newDepartmentEmployees').value);
+        if (newName) {
+          if (!Number.isInteger(newEmployees) || newEmployees < 1) {
+            throw new Error('Укажите численность нового отдела целым числом больше нуля.');
+          }
+          if (departments.some(item => item.name.toLowerCase() === newName.toLowerCase())) {
+            throw new Error('Такой отдел уже существует.');
+          }
+          const result = await sb.from('departments').insert({ name: newName, employees: newEmployees });
+          if (result.error) throw result.error;
+        }
+
+        closeDepartments();
+        await loadData();
+      } catch (error) {
+        alert(`Не удалось сохранить отделы: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Сохранить численность';
+      }
+    }
+
     async function ensureDepartment(name) {
       const existing = departments.find(item => item.name.toLowerCase() === name.toLowerCase());
       if (existing) return existing.name;
@@ -898,17 +1020,27 @@
       window.location.replace('index.html');
     });
     $('addButton').addEventListener('click', () => setModal());
+    $('departmentsButton').addEventListener('click', openDepartments);
     $('closeModalButton').addEventListener('click', closeModal);
     $('cancelModalButton').addEventListener('click', closeModal);
+    $('closeDepartmentsButton').addEventListener('click', closeDepartments);
+    $('cancelDepartmentsButton').addEventListener('click', closeDepartments);
     $('modalBg').addEventListener('click', event => {
       if (event.target === $('modalBg')) closeModal();
     });
+    $('departmentsModalBg').addEventListener('click', event => {
+      if (event.target === $('departmentsModalBg')) closeDepartments();
+    });
     $('recordForm').addEventListener('submit', saveRecord);
+    $('departmentsForm').addEventListener('submit', saveDepartments);
     $('refreshButton').addEventListener('click', loadData);
     $('exportButton').addEventListener('click', exportCsv);
     ['periodFilter', 'departmentFilter', 'typeFilter'].forEach(id => $(id).addEventListener('change', render));
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeModal();
+      if (event.key === 'Escape') {
+        closeModal();
+        closeDepartments();
+      }
     });
     $('termTableBody').addEventListener('click', event => {
       const editButton = event.target.closest('[data-edit]');
