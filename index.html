@@ -997,9 +997,30 @@
 const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
 const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+const SUPABASE_TIMEOUT_MS = 12000;
+
+function fetchWithTimeout(input, init = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+    return fetch(input, { ...init, signal: controller.signal })
+        .finally(() => clearTimeout(timeoutId));
+}
+
+function withTimeout(promise, timeoutMs = SUPABASE_TIMEOUT_MS) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            const error = new Error(`Supabase не ответил за ${Math.round(timeoutMs / 1000)} секунд.`);
+            error.name = 'TimeoutError';
+            reject(error);
+        }, timeoutMs);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+}
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: fetchWithTimeout }
 });
 
 // ==========================================
@@ -1149,13 +1170,21 @@ function calc(v) {
 }
 
 // ===== ЯДРО =====
-function showError(title, message, details) {
+function showError(title, message, details, hint) {
     document.getElementById('loadingScreen').classList.add('hidden');
     const el = document.getElementById('errorScreen');
     el.classList.remove('hidden');
     el.innerHTML = '<div class="error-box"><h3>⚠️ ' + esc(title) + '</h3><p>' + message + '</p>' +
         (details ? '<p style="font-size:12px;color:#9ca3af;margin-top:12px;">Деталь: <code>' + esc(details) + '</code></p>' : '') +
-        '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> проверьте, что SQL-скрипты выполнены в Supabase.</p></div>';
+        '<p style="margin-top:16px;font-size:13px;"><b>Что делать:</b> ' + esc(hint || 'Проверьте подключение к интернету и повторите загрузку.') + '</p>' +
+        '<button class="btn" type="button" onclick="retryLoad()" style="margin-top:16px;">Повторить загрузку</button></div>';
+}
+
+function retryLoad() {
+    document.getElementById('errorScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loadingScreen').classList.remove('hidden');
+    loadAllData();
 }
 
 async function checkPassword() {
@@ -1194,11 +1223,14 @@ function isAuthenticated() {
 async function loadAllData() {
     setSync('syncing');
     try {
-        const [vRes, mRes, kRes] = await Promise.all([
+        if (!navigator.onLine) {
+            throw new Error('Браузер не подключён к интернету.');
+        }
+        const [vRes, mRes, kRes] = await withTimeout(Promise.all([
             sb.from('vacancies').select('*').order('created_at', { ascending: false }),
             sb.from('hr_metrics').select('*'),
             sb.from('hr_kpi').select('*')
-        ]);
+        ]));
 
         if (vRes.error) throw vRes.error;
         if (mRes.error) throw mRes.error;
@@ -1221,19 +1253,30 @@ async function loadAllData() {
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
         render();
+        return true;
     } catch (err) {
         console.error('Ошибка загрузки:', err);
         setSync('error');
-        showError('Не удалось загрузить данные', 'Проверьте подключение к Supabase.', err.message || String(err));
+        const detail = err?.message || String(err);
+        const timeout = err?.name === 'TimeoutError' || err?.name === 'AbortError' || /abort|timeout|timed out/i.test(detail);
+        showError(
+            'Нет соединения с Supabase',
+            timeout
+                ? 'Supabase не ответил за 12 секунд. Данные не загружены, чтобы страница не зависала.'
+                : 'Не удалось получить данные. Проверьте интернет, VPN и блокировщики браузера.',
+            detail,
+            'Проверьте интернет или корпоративный VPN и нажмите «Повторить загрузку».'
+        );
+        return false;
     }
 }
 
 async function refreshData() {
     const btn = document.getElementById('refreshBtn');
     btn.disabled = true; btn.textContent = 'Обновление…';
-    await loadAllData();
+    const loaded = await loadAllData();
     btn.disabled = false; btn.textContent = 'Обновить данные';
-    toast('Данные обновлены');
+    if (loaded) toast('Данные обновлены');
 }
 
 function subscribeRealtime() {

@@ -587,8 +587,30 @@
 
     const SUPABASE_URL = 'https://nnaglaixoxrvaejhbrlr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uYWdsYWl4b3hydmFlamhicmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNjc3ODQsImV4cCI6MjEwNDg0Mzc4NH0.P9YToeVjQ9wBmNwjKaR1yXeBbEJiYPreJLbxnzL5tzQ';
+    const SUPABASE_TIMEOUT_MS = 12000;
+
+    function fetchWithTimeout(input, init = {}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+      return fetch(input, { ...init, signal: controller.signal })
+        .finally(() => clearTimeout(timeoutId));
+    }
+
+    function withTimeout(promise, timeoutMs = SUPABASE_TIMEOUT_MS) {
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          const error = new Error(`Supabase не ответил за ${Math.round(timeoutMs / 1000)} секунд.`);
+          error.name = 'TimeoutError';
+          reject(error);
+        }, timeoutMs);
+      });
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+    }
+
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: fetchWithTimeout }
     });
 
     const REASONS = [
@@ -631,17 +653,26 @@
       $('connStatus').textContent = label;
     }
 
-    function showSetupError(message) {
+    function showSetupError(error) {
+      const message = error?.message || String(error);
+      const missingTables = /could not find the table|relation .* does not exist/i.test(message);
+      const timeout = error?.name === 'TimeoutError' || error?.name === 'AbortError' || /abort|timeout|timed out/i.test(message);
       const notice = $('setupNotice');
       console.error('Turnover setup error:', message);
-      notice.innerHTML = 'Раздел текучести подготовлен, но таблицы ещё не подключены к общей базе. Администратору нужно выполнить <code>supabase/turnover_schema.sql</code> в SQL Editor проекта Supabase.';
+      if (missingTables) {
+        notice.innerHTML = 'Раздел текучести подготовлен, но таблицы ещё не подключены к общей базе. Администратору нужно выполнить <code>supabase/turnover_schema.sql</code> в SQL Editor проекта Supabase.';
+      } else {
+        notice.innerHTML = `<strong>Нет соединения с Supabase.</strong><br>${timeout
+          ? 'Supabase не ответил за 12 секунд. Проверьте интернет, VPN и блокировщики браузера.'
+          : 'Не удалось получить данные. Проверьте интернет, VPN и блокировщики браузера.'}<br><button class="btn small" type="button" onclick="loadData()" style="margin-top:10px;">Повторить загрузку</button>`;
+      }
       notice.classList.add('show');
       $('loading').hidden = true;
       $('content').hidden = true;
       $('addButton').disabled = true;
       $('departmentsButton').disabled = true;
       $('exportButton').disabled = true;
-      setConnection('off', 'требуется настройка');
+      setConnection('off', missingTables ? 'требуется настройка' : timeout ? 'нет соединения' : 'ошибка загрузки');
     }
 
     function initForm() {
@@ -662,10 +693,13 @@
       $('loading').hidden = false;
       $('content').hidden = true;
       try {
-        const [departmentResult, terminationResult] = await Promise.all([
+        if (!navigator.onLine) {
+          throw new Error('Браузер не подключён к интернету.');
+        }
+        const [departmentResult, terminationResult] = await withTimeout(Promise.all([
           sb.from('departments').select('*').order('name'),
           sb.from('terminations').select('*').order('date', { ascending: false })
-        ]);
+        ]));
         if (departmentResult.error) throw departmentResult.error;
         if (terminationResult.error) throw terminationResult.error;
         departments = departmentResult.data || [];
@@ -683,7 +717,7 @@
         setConnection('on', 'данные актуальны');
         render();
       } catch (error) {
-        showSetupError(error.message || error);
+        showSetupError(error);
       }
     }
 
