@@ -596,6 +596,112 @@
       gap: 6px;
     }
 
+    .participant-toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .participant-toolbar label {
+      margin: 0;
+    }
+
+    .participant-select-all {
+      display: flex !important;
+      min-height: 42px;
+      align-items: center;
+      gap: 8px !important;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      text-transform: none !important;
+    }
+
+    .participant-select-all input {
+      width: 17px;
+      min-height: 17px;
+      margin: 0;
+    }
+
+    .participant-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .participant-summary span {
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(116, 123, 132, .09);
+      font-size: 8px;
+      font-weight: 800;
+    }
+
+    .participant-summary .completed {
+      color: var(--sage);
+      background: var(--sage-soft);
+    }
+
+    .participant-summary .missing {
+      color: var(--coral);
+      background: var(--coral-soft);
+    }
+
+    .participant-summary .not-sent {
+      color: var(--gold);
+      background: var(--gold-soft);
+    }
+
+    .participant-table {
+      min-width: 680px;
+    }
+
+    .participant-table th:first-child,
+    .participant-table td:first-child {
+      width: 42px;
+      text-align: center;
+    }
+
+    .participant-table td input[type="checkbox"] {
+      width: 17px;
+      min-height: 17px;
+    }
+
+    .participant-table select {
+      min-width: 150px;
+    }
+
+    .participant-name {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .participant-department {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .participant-save-state {
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .participant-bulk-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
     .modal pre {
       margin: 0 0 16px;
       padding: 13px;
@@ -676,6 +782,9 @@
       .form-grid .span-2 { grid-column: auto; }
       .audience-tools { grid-template-columns: 1fr 1fr; }
       .audience-tools label { grid-column: 1 / -1; }
+      .participant-toolbar { grid-template-columns: 1fr; }
+      .participant-bulk-actions { width: 100%; }
+      .participant-bulk-actions .btn { flex: 1 1 140px; }
     }
 
     @media (max-width: 460px) {
@@ -876,6 +985,60 @@
     </form>
   </div>
 
+  <div class="modal-bg" id="participantsModalBg" role="dialog" aria-modal="true" aria-labelledby="participantsModalTitle">
+    <div class="modal wide">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Результаты волны</p>
+          <h2 id="participantsModalTitle">Участники опроса</h2>
+          <p class="hint" id="participantsWaveSubtitle"></p>
+        </div>
+        <button class="btn secondary small" id="closeParticipantsButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+
+      <p class="hint">
+        Отметьте, кто прошёл опрос, кто не прошёл, а кому приглашение ещё не
+        отправляли. Изменения сохраняются сразу.
+      </p>
+
+      <div class="participant-toolbar">
+        <label>Поиск участника
+          <input id="participantSearch" placeholder="Имя или отдел">
+        </label>
+        <label class="participant-select-all">
+          <input id="participantSelectAll" type="checkbox">
+          Выбрать всех
+        </label>
+      </div>
+
+      <div class="participant-summary" id="participantSummary"></div>
+
+      <div class="table-wrap">
+        <table class="participant-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Сотрудник</th>
+              <th>Статус прохождения</th>
+              <th>Дата завершения</th>
+            </tr>
+          </thead>
+          <tbody id="participantsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
+        <span class="participant-save-state" id="participantSaveState"></span>
+        <div class="participant-bulk-actions">
+          <button class="btn secondary small" id="bulkNotSentButton" type="button">Не отправлен</button>
+          <button class="btn secondary small" id="bulkNotCompletedButton" type="button">Не прошёл</button>
+          <button class="btn small" id="bulkCompletedButton" type="button">Прошёл</button>
+          <button class="btn secondary small" id="closeParticipantsBottomButton" type="button">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-bg" id="importModalBg" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
     <form class="modal" id="importForm">
       <div class="modal-head">
@@ -983,6 +1146,12 @@
       ['closed', 'Закрыт']
     ];
 
+    const PARTICIPATION_RESULTS = [
+      ['not_sent', 'Не отправлен'],
+      ['not_completed', 'Не прошёл'],
+      ['completed', 'Прошёл']
+    ];
+
     const OUTCOMES = [
       ['', 'Не указан'],
       ['work_issue', 'Выявлена рабочая проблема'],
@@ -1016,7 +1185,9 @@
     let charts = {};
     let analysis = null;
     let authUser = null;
+    let activeParticipantsWaveId = null;
     const selectedWaveEmployeeIds = new Set();
+    const selectedParticipantEmployeeIds = new Set();
 
     function setConnection(kind, label) {
       $('connStatus').className = `status ${kind}`;
@@ -1231,12 +1402,208 @@
           <td>${stats.total}</td>
           <td>${stats.completed}${stats.total ? ` · ${Math.round(stats.completed / stats.total * 100)}%` : ''}</td>
           <td class="row-actions">
+            <button class="btn secondary small" type="button" data-manage-participants="${esc(wave.id)}">Участники</button>
             ${wave.status === 'open'
               ? `<button class="btn secondary small" type="button" data-close-wave="${esc(wave.id)}">Завершить</button>`
               : ''}
           </td>
         </tr>`;
       }).join('');
+    }
+
+    function participantItems(waveId) {
+      const employeesById = new Map(state.employees.map(employee => [employee.id, employee]));
+      return state.participation
+        .filter(item => item.wave_id === waveId && item.eligibility === 'eligible')
+        .map(item => ({
+          ...item,
+          employee: employeesById.get(item.employee_id)
+        }))
+        .filter(item => item.employee)
+        .sort((left, right) =>
+          (left.employee.department || '').localeCompare(right.employee.department || '', 'ru') ||
+          (left.employee.name || '').localeCompare(right.employee.name || '', 'ru')
+        );
+    }
+
+    function participationResultLabel(value) {
+      return PARTICIPATION_RESULTS.find(([key]) => key === value)?.[1] || 'Не отправлен';
+    }
+
+    function formatCompletedAt(value) {
+      return value ? new Intl.DateTimeFormat('ru-RU').format(new Date(value)) : '—';
+    }
+
+    function updateParticipantSelectionControls() {
+      const visibleBoxes = [...$('participantsBody').querySelectorAll('[data-participant-select]')];
+      const visibleSelected = visibleBoxes.filter(box => selectedParticipantEmployeeIds.has(box.dataset.participantSelect));
+      const selectAll = $('participantSelectAll');
+      selectAll.checked = visibleBoxes.length > 0 && visibleSelected.length === visibleBoxes.length;
+      selectAll.indeterminate = visibleSelected.length > 0 && visibleSelected.length < visibleBoxes.length;
+
+      const selectedCount = selectedParticipantEmployeeIds.size;
+      $('participantSaveState').textContent = selectedCount
+        ? `Выбрано: ${selectedCount}`
+        : 'Выберите сотрудников для массового действия';
+      ['bulkNotSentButton', 'bulkNotCompletedButton', 'bulkCompletedButton'].forEach(id => {
+        $(id).disabled = selectedCount === 0;
+      });
+    }
+
+    function renderParticipants() {
+      if (!$('participantsModalBg').classList.contains('open')) return;
+      const wave = state.waves.find(item => item.id === activeParticipantsWaveId);
+      if (!wave) {
+        closeParticipants();
+        return;
+      }
+
+      const allItems = participantItems(wave.id);
+      const query = $('participantSearch').value.trim().toLowerCase();
+      const visible = allItems.filter(item =>
+        !query ||
+        `${item.employee.name} ${item.employee.department || ''}`.toLowerCase().includes(query)
+      );
+      const completed = allItems.filter(item => item.result === 'completed').length;
+      const missing = allItems.filter(item => item.result === 'not_completed').length;
+      const notSent = allItems.filter(item => item.result === 'not_sent').length;
+
+      $('participantsModalTitle').textContent = wave.name;
+      $('participantsWaveSubtitle').textContent =
+        `Дата проведения: ${formatDate(wave.starts_on)} · участников: ${allItems.length}`;
+      $('participantSummary').innerHTML = `
+        <span>Всего: ${allItems.length}</span>
+        <span class="completed">Прошли: ${completed}</span>
+        <span class="missing">Не прошли: ${missing}</span>
+        <span class="not-sent">Не отправлено: ${notSent}</span>`;
+
+      $('participantsBody').innerHTML = visible.length
+        ? visible.map(item => {
+          const employee = item.employee;
+          return `<tr data-wave-id="${esc(wave.id)}" data-participant-employee-id="${esc(item.employee_id)}">
+            <td>
+              <input type="checkbox" data-participant-select="${esc(item.employee_id)}"
+                ${selectedParticipantEmployeeIds.has(item.employee_id) ? 'checked' : ''}
+                aria-label="Выбрать ${esc(employee.name)}">
+            </td>
+            <td>
+              <span class="participant-name">${esc(employee.name)}</span>
+              <span class="participant-department">${esc(employee.department || '—')}</span>
+            </td>
+            <td>
+              <select data-participant-result aria-label="Результат ${esc(employee.name)}">
+                ${PARTICIPATION_RESULTS.map(([value, label]) =>
+                  `<option value="${value}" ${item.result === value ? 'selected' : ''}>${esc(label)}</option>`
+                ).join('')}
+              </select>
+            </td>
+            <td>${esc(formatCompletedAt(item.completed_at))}</td>
+          </tr>`;
+        }).join('')
+        : '<tr><td colspan="4" class="empty">Участники по выбранному поиску не найдены.</td></tr>';
+      updateParticipantSelectionControls();
+    }
+
+    function openParticipants(waveId) {
+      activeParticipantsWaveId = waveId;
+      selectedParticipantEmployeeIds.clear();
+      $('participantSearch').value = '';
+      $('participantSaveState').textContent = '';
+      $('participantsModalBg').classList.add('open');
+      renderParticipants();
+    }
+
+    function closeParticipants() {
+      $('participantsModalBg').classList.remove('open');
+      activeParticipantsWaveId = null;
+      selectedParticipantEmployeeIds.clear();
+    }
+
+    async function saveParticipantChanges(changes) {
+      if (!changes.length) return;
+      if (!await requireSupabaseAuth()) return;
+      const waveId = activeParticipantsWaveId;
+      if (!waveId) return;
+
+      $('participantSaveState').textContent = 'Сохранение…';
+      try {
+        const existing = new Map(participantItems(waveId).map(item => [item.employee_id, item]));
+        const completedAt = new Date().toISOString();
+        const payload = changes.map(({ employeeId, result }) => {
+          const item = existing.get(employeeId);
+          return {
+            wave_id: waveId,
+            employee_id: employeeId,
+            eligibility: 'eligible',
+            result,
+            exclusion_reason: item?.exclusion_reason || null,
+            completed_at: result === 'completed'
+              ? item?.completed_at || completedAt
+              : null
+          };
+        });
+        await upsertChunks('survey_participation', payload, 'wave_id,employee_id');
+
+        payload.forEach(saved => {
+          const item = state.participation.find(entry =>
+            entry.wave_id === saved.wave_id && entry.employee_id === saved.employee_id
+          );
+          if (item) Object.assign(item, saved);
+        });
+        render();
+        renderParticipants();
+        $('participantSaveState').textContent = 'Сохранено';
+      } catch (error) {
+        if (/row-level security|permission denied|jwt|unauthorized/i.test(error.message)) {
+          authUser = null;
+          showAuthRequired();
+          openAuth();
+        } else {
+          alert(`Не удалось сохранить результат: ${error.message}`);
+        }
+        renderParticipants();
+      }
+    }
+
+    async function handleParticipantChange(event) {
+      const checkbox = event.target.closest('[data-participant-select]');
+      if (checkbox) {
+        if (checkbox.checked) {
+          selectedParticipantEmployeeIds.add(checkbox.dataset.participantSelect);
+        } else {
+          selectedParticipantEmployeeIds.delete(checkbox.dataset.participantSelect);
+        }
+        updateParticipantSelectionControls();
+        return;
+      }
+
+      const select = event.target.closest('[data-participant-result]');
+      if (!select) return;
+      const row = select.closest('tr');
+      select.disabled = true;
+      await saveParticipantChanges([{
+        employeeId: row.dataset.participantEmployeeId,
+        result: select.value
+      }]);
+    }
+
+    async function markSelectedParticipants(result) {
+      const changes = [...selectedParticipantEmployeeIds].map(employeeId => ({ employeeId, result }));
+      await saveParticipantChanges(changes);
+    }
+
+    function toggleSelectAllParticipants() {
+      const visibleBoxes = [...$('participantsBody').querySelectorAll('[data-participant-select]')];
+      const shouldSelect = $('participantSelectAll').checked;
+      visibleBoxes.forEach(box => {
+        box.checked = shouldSelect;
+        if (shouldSelect) {
+          selectedParticipantEmployeeIds.add(box.dataset.participantSelect);
+        } else {
+          selectedParticipantEmployeeIds.delete(box.dataset.participantSelect);
+        }
+      });
+      updateParticipantSelectionControls();
     }
 
     async function closeWave(event) {
@@ -2038,6 +2405,9 @@
     $('waveModalBg').addEventListener('click', event => {
       if (event.target === $('waveModalBg')) closeWaveModal();
     });
+    $('participantsModalBg').addEventListener('click', event => {
+      if (event.target === $('participantsModalBg')) closeParticipants();
+    });
     $('importModalBg').addEventListener('click', event => {
       if (event.target === $('importModalBg')) closeImport();
     });
@@ -2046,6 +2416,18 @@
     $('waveEmployeeSearch').addEventListener('input', renderWaveEmployeePicker);
     $('waveEmployeeRows').addEventListener('change', toggleWaveEmployee);
     $('waveJournalBody').addEventListener('click', closeWave);
+    $('waveJournalBody').addEventListener('click', event => {
+      const button = event.target.closest('[data-manage-participants]');
+      if (button) openParticipants(button.dataset.manageParticipants);
+    });
+    $('closeParticipantsButton').addEventListener('click', closeParticipants);
+    $('closeParticipantsBottomButton').addEventListener('click', closeParticipants);
+    $('participantSearch').addEventListener('input', renderParticipants);
+    $('participantSelectAll').addEventListener('change', toggleSelectAllParticipants);
+    $('participantsBody').addEventListener('change', handleParticipantChange);
+    $('bulkNotSentButton').addEventListener('click', () => markSelectedParticipants('not_sent'));
+    $('bulkNotCompletedButton').addEventListener('click', () => markSelectedParticipants('not_completed'));
+    $('bulkCompletedButton').addEventListener('click', () => markSelectedParticipants('completed'));
     $('importForm').addEventListener('submit', importCsv);
     $('authForm').addEventListener('submit', submitAuth);
     $('importType').addEventListener('change', updateImportTemplate);
@@ -2066,6 +2448,7 @@
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         closeWaveModal();
+        closeParticipants();
         closeImport();
         closeAuth();
       }
