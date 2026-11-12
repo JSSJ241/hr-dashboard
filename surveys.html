@@ -891,7 +891,8 @@
         <button class="btn secondary small" id="closeAuthButton" type="button" aria-label="Закрыть">×</button>
       </div>
       <p class="hint">
-        Имена сотрудников и карточки HRBP доступны только после входа через Supabase Auth.
+        Используйте рабочую учётную запись из Supabase Authentication. Пароль
+        общего экрана дашборда здесь не действует.
       </p>
       <label>Рабочая почта
         <input id="authEmail" type="email" autocomplete="username" required>
@@ -984,6 +985,7 @@
     };
     let charts = {};
     let analysis = null;
+    let authUser = null;
     const selectedWaveEmployeeIds = new Set();
 
     function setConnection(kind, label) {
@@ -1017,6 +1019,36 @@
       $('importButton').disabled = true;
       $('exportButton').disabled = true;
       setConnection('off', missingTables ? 'требуется настройка' : permissionDenied ? 'требуется доступ' : 'ошибка загрузки');
+    }
+
+    function showAuthRequired() {
+      const notice = $('setupNotice');
+      notice.innerHTML = `
+        <strong>Требуется вход в Supabase.</strong><br>
+        Чтобы видеть волны и сохранять данные, войдите под рабочей учётной записью
+        из Supabase Authentication. Пароль общего экрана дашборда здесь не действует.
+        <br><button class="btn small" type="button" onclick="openAuth()" style="margin-top:10px;">
+          Войти в Supabase
+        </button>`;
+      notice.classList.add('show');
+      setConnection('off', 'требуется вход');
+    }
+
+    async function refreshAuthUser() {
+      try {
+        const result = await withTimeout(sb.auth.getUser());
+        authUser = result.error ? null : result.data?.user || null;
+      } catch (error) {
+        authUser = null;
+      }
+      return authUser;
+    }
+
+    async function requireSupabaseAuth() {
+      if (authUser || await refreshAuthUser()) return true;
+      showAuthRequired();
+      openAuth();
+      return false;
     }
 
     function todayIso() {
@@ -1053,6 +1085,7 @@
       $('content').hidden = true;
       try {
         if (!navigator.onLine) throw new Error('Браузер не подключён к интернету.');
+        await refreshAuthUser();
         const [employeeResult, waveResult, participationResult, followupResult, rosterResult] = await withTimeout(Promise.all([
           sb.from('survey_employees').select('*').order('name'),
           sb.from('survey_waves').select('*').order('starts_on'),
@@ -1086,7 +1119,11 @@
         $('exportButton').disabled = false;
         $('loading').hidden = true;
         $('content').hidden = false;
-        setConnection('on', state.waves.length ? 'данные актуальны' : 'нет волн опросов');
+        if (authUser) {
+          setConnection('on', state.waves.length ? 'данные актуальны' : 'нет волн опросов');
+        } else {
+          showAuthRequired();
+        }
         render();
       } catch (error) {
         showSetupError(error);
@@ -1177,6 +1214,7 @@
       if (!button) return;
       const wave = state.waves.find(item => item.id === button.dataset.closeWave);
       if (!wave) return;
+      if (!await requireSupabaseAuth()) return;
       if (!confirm(`Завершить волну «${wave.name}»? После этого она появится в аналитике участия.`)) return;
       button.disabled = true;
       button.textContent = 'Завершение…';
@@ -1474,6 +1512,7 @@
       if (!button) return;
       const row = button.closest('tr');
       if (!row) return;
+      if (!await requireSupabaseAuth()) return;
       const payload = {
         wave_id: row.dataset.waveId,
         employee_id: row.dataset.employeeId,
@@ -1608,6 +1647,7 @@
       const type = $('importType').value;
       const file = $('importFile').files[0];
       if (!file) return;
+      if (!await requireSupabaseAuth()) return;
       const button = $('submitImportButton');
       button.disabled = true;
       button.textContent = 'Загрузка…';
@@ -1846,6 +1886,7 @@
         alert('Добавьте в волну хотя бы одного сотрудника.');
         return;
       }
+      if (!await requireSupabaseAuth()) return;
 
       button.disabled = true;
       button.textContent = 'Создание…';
@@ -1878,7 +1919,13 @@
         closeWaveModal();
         await loadData();
       } catch (error) {
-        alert(`Не удалось создать волну: ${error.message}`);
+        if (/row-level security|permission denied|jwt|unauthorized/i.test(error.message)) {
+          authUser = null;
+          showAuthRequired();
+          openAuth();
+        } else {
+          alert(`Не удалось создать волну: ${error.message}`);
+        }
       } finally {
         button.disabled = false;
         button.textContent = 'Создать волну';
@@ -1915,10 +1962,14 @@
           password: $('authPassword').value
         }));
         if (result.error) throw result.error;
+        authUser = result.data.user;
         closeAuth();
         await loadData();
       } catch (error) {
-        alert(`Не удалось войти: ${error.message}`);
+        const message = /invalid login credentials/i.test(error.message)
+          ? 'Неверная почта или пароль Supabase. Проверьте пользователя в Supabase → Authentication → Users. Пароль общего экрана дашборда здесь не подходит.'
+          : error.message;
+        alert(`Не удалось войти: ${message}`);
       } finally {
         button.disabled = false;
         button.textContent = 'Войти';
