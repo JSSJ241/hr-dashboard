@@ -448,6 +448,150 @@
       text-transform: none;
     }
 
+    .modal.wide {
+      width: min(820px, 100%);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 12px;
+    }
+
+    .form-grid .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .audience-builder {
+      margin: 4px 0 2px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-2);
+    }
+
+    .audience-builder h3 {
+      margin: 0 0 5px;
+      font-size: 13px;
+      letter-spacing: -.02em;
+    }
+
+    .audience-builder > .hint {
+      margin-bottom: 12px;
+    }
+
+    .audience-tools {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .audience-tools label {
+      margin: 0;
+    }
+
+    .audience-tools .btn {
+      align-self: end;
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    .audience-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 10px 0 8px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .audience-summary strong {
+      color: var(--ink);
+    }
+
+    .employee-picker {
+      display: grid;
+      max-height: 285px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .picker-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    .picker-row:first-child {
+      border-top: 0;
+    }
+
+    .picker-row:hover {
+      background: #fcfaf6;
+    }
+
+    .picker-row input {
+      width: 17px;
+      min-height: 17px;
+      margin: 0;
+    }
+
+    .picker-row strong,
+    .picker-row small {
+      display: block;
+    }
+
+    .picker-row strong {
+      font-size: 10px;
+    }
+
+    .picker-row small {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .wave-journal-card {
+      margin-bottom: 16px;
+    }
+
+    .wave-table {
+      min-width: 820px;
+    }
+
+    .wave-table td:first-child {
+      min-width: 230px;
+    }
+
+    .wave-table .survey-title {
+      display: block;
+      max-width: 360px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .wave-table .survey-note {
+      display: block;
+      max-width: 430px;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 8px;
+      white-space: normal;
+    }
+
+    .wave-table .row-actions {
+      display: flex;
+      gap: 6px;
+    }
+
     .modal pre {
       margin: 0 0 16px;
       padding: 13px;
@@ -502,6 +646,10 @@
       .toolbar > * { flex: 1 1 170px; }
       .toolbar select { min-width: 0; width: 100%; }
       .card { padding: 15px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .span-2 { grid-column: auto; }
+      .audience-tools { grid-template-columns: 1fr 1fr; }
+      .audience-tools label { grid-column: 1 / -1; }
     }
 
     @media (max-width: 460px) {
@@ -529,7 +677,8 @@
 
     <div class="notice" id="setupNotice">
       Для раздела опросов ещё не подключены таблицы Supabase. Администратору нужно
-      выполнить <code>supabase/survey_schema.sql</code> и настроить доступ для
+      выполнить <code>supabase/survey_schema.sql</code>,
+      <code>supabase/survey_wave_creation.sql</code> и настроить доступ для
       авторизованных пользователей.
     </div>
 
@@ -540,7 +689,8 @@
       <select id="departmentFilter">
         <option value="ALL">Все подразделения</option>
       </select>
-      <button class="btn push" id="importButton" type="button">Импортировать CSV</button>
+      <button class="btn push" id="newWaveButton" type="button" disabled>+ Новая волна</button>
+      <button class="btn secondary small" id="importButton" type="button">Импортировать CSV</button>
       <button class="btn secondary small" id="exportButton" type="button">Экспорт списка</button>
       <button class="btn secondary small" id="refreshButton" type="button">Обновить</button>
     </section>
@@ -548,6 +698,32 @@
     <div class="loading" id="loading">Загрузка данных…</div>
 
     <div id="content" hidden>
+      <section class="card full wave-journal-card">
+        <div class="card-head">
+          <div>
+            <h2>Проведённые опросы</h2>
+            <p>Ручной журнал волн: даты проведения, состав участников и статус.</p>
+          </div>
+          <button class="btn small" id="journalNewWaveButton" type="button" disabled>+ Новая волна</button>
+        </div>
+        <div class="table-wrap">
+          <table class="wave-table">
+            <thead>
+              <tr>
+                <th>Опрос</th>
+                <th>Дата проведения</th>
+                <th>Дедлайн</th>
+                <th>Статус</th>
+                <th>Участники</th>
+                <th>Ответили</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="waveJournalBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="kpis" id="kpis" aria-label="Показатели участия"></section>
 
       <div class="grid">
@@ -610,6 +786,69 @@
       </section>
     </div>
   </main>
+
+  <div class="modal-bg" id="waveModalBg" role="dialog" aria-modal="true" aria-labelledby="waveModalTitle">
+    <form class="modal wide" id="waveForm">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Ручное заполнение</p>
+          <h2 id="waveModalTitle">Новая волна опроса</h2>
+        </div>
+        <button class="btn secondary small" id="closeWaveButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+
+      <div class="form-grid">
+        <label class="span-2">Название опроса
+          <input id="waveName" required maxlength="160" placeholder="Например, Пульс команды разработки — ноябрь">
+        </label>
+        <label>Дата проведения
+          <input id="waveStartsOn" type="date" required>
+        </label>
+        <label>Дедлайн ответа
+          <input id="waveClosesOn" type="date" required>
+        </label>
+        <label>Статус
+          <select id="waveStatus">
+            <option value="open">Открыт</option>
+            <option value="closed">Завершён</option>
+          </select>
+        </label>
+        <label>Комментарий
+          <input id="waveNotes" maxlength="500" placeholder="Формат, аудитория или ссылка">
+        </label>
+      </div>
+
+      <section class="audience-builder" aria-labelledby="audienceTitle">
+        <h3 id="audienceTitle">Кого добавляем в волну</h3>
+        <p class="hint">
+          Выберите отдел и нажмите «Выбрать весь отдел». Затем снимите галочки
+          с тех, кого не нужно включать.
+        </p>
+        <div class="audience-tools">
+          <label>Отдел
+            <select id="waveDepartmentFilter">
+              <option value="ALL">Все отделы</option>
+            </select>
+          </label>
+          <button class="btn secondary small" id="selectWaveDepartmentButton" type="button">Выбрать весь отдел</button>
+          <button class="btn secondary small" id="clearWaveAudienceButton" type="button">Очистить</button>
+        </div>
+        <label>Поиск сотрудника
+          <input id="waveEmployeeSearch" placeholder="Имя или должность">
+        </label>
+        <div class="audience-summary">
+          <span id="waveAudienceSummary">Никто не выбран</span>
+          <span id="waveVisibleSummary"></span>
+        </div>
+        <div class="employee-picker" id="waveEmployeeRows"></div>
+      </section>
+
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelWaveButton" type="button">Отмена</button>
+        <button class="btn" id="saveWaveButton" type="submit">Создать волну</button>
+      </div>
+    </form>
+  </div>
 
   <div class="modal-bg" id="importModalBg" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
     <form class="modal" id="importForm">
@@ -738,12 +977,14 @@
 
     let state = {
       employees: [],
+      rosterEmployees: [],
       waves: [],
       participation: [],
       followups: []
     };
     let charts = {};
     let analysis = null;
+    const selectedWaveEmployeeIds = new Set();
 
     function setConnection(kind, label) {
       $('connStatus').className = `status ${kind}`;
@@ -771,6 +1012,8 @@
       notice.classList.add('show');
       $('loading').hidden = true;
       $('content').hidden = true;
+      $('newWaveButton').disabled = true;
+      $('journalNewWaveButton').disabled = true;
       $('importButton').disabled = true;
       $('exportButton').disabled = true;
       setConnection('off', missingTables ? 'требуется настройка' : permissionDenied ? 'требуется доступ' : 'ошибка загрузки');
@@ -810,19 +1053,25 @@
       $('content').hidden = true;
       try {
         if (!navigator.onLine) throw new Error('Браузер не подключён к интернету.');
-        const [employeeResult, waveResult, participationResult, followupResult] = await withTimeout(Promise.all([
+        const [employeeResult, waveResult, participationResult, followupResult, rosterResult] = await withTimeout(Promise.all([
           sb.from('survey_employees').select('*').order('name'),
           sb.from('survey_waves').select('*').order('starts_on'),
           sb.from('survey_participation').select('*'),
-          sb.from('survey_followups').select('*')
+          sb.from('survey_followups').select('*'),
+          sb.from('employees').select('id,name,dept,position,hired_on').eq('active', true).order('name')
         ]));
 
-        for (const result of [employeeResult, waveResult, participationResult, followupResult]) {
+        for (const result of [employeeResult, waveResult, participationResult, followupResult, rosterResult]) {
           if (result.error) throw result.error;
         }
 
         state = {
           employees: employeeResult.data || [],
+          rosterEmployees: (rosterResult.data || []).map(employee => ({
+            ...employee,
+            department: employee.dept,
+            status: 'active'
+          })),
           waves: sortWaves(waveResult.data || []),
           participation: participationResult.data || [],
           followups: followupResult.data || []
@@ -830,6 +1079,9 @@
 
         fillWaveOptions();
         fillDepartmentOptions();
+        fillWaveDepartmentOptions();
+        $('newWaveButton').disabled = false;
+        $('journalNewWaveButton').disabled = false;
         $('importButton').disabled = false;
         $('exportButton').disabled = false;
         $('loading').hidden = true;
@@ -862,6 +1114,82 @@
         departments.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
       if ([...$('departmentFilter').options].some(option => option.value === previous)) {
         $('departmentFilter').value = previous;
+      }
+    }
+
+    function fillWaveDepartmentOptions() {
+      const previous = $('waveDepartmentFilter').value || 'ALL';
+      const departments = [...new Set(state.rosterEmployees.map(item => item.department).filter(Boolean))]
+        .sort((left, right) => left.localeCompare(right, 'ru'));
+      $('waveDepartmentFilter').innerHTML = '<option value="ALL">Все отделы</option>' +
+        departments.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
+      if ([...$('waveDepartmentFilter').options].some(option => option.value === previous)) {
+        $('waveDepartmentFilter').value = previous;
+      }
+    }
+
+    function waveParticipationStats(waveId) {
+      const items = state.participation.filter(item =>
+        item.wave_id === waveId && item.eligibility === 'eligible'
+      );
+      return {
+        total: items.length,
+        completed: items.filter(item => item.result === 'completed').length
+      };
+    }
+
+    function renderWaveJournal() {
+      const waves = [...state.waves].sort((left, right) =>
+        String(right.starts_on || '').localeCompare(String(left.starts_on || ''))
+      );
+      if (!waves.length) {
+        $('waveJournalBody').innerHTML =
+          '<tr><td colspan="7" class="empty">Опросов пока нет. Нажмите «Новая волна», чтобы добавить первый.</td></tr>';
+        return;
+      }
+
+      $('waveJournalBody').innerHTML = waves.map(wave => {
+        const stats = waveParticipationStats(wave.id);
+        const status = wave.status === 'open'
+          ? '<span class="badge risk">открыт</span>'
+          : '<span class="badge closed">завершён</span>';
+        return `<tr>
+          <td>
+            <span class="survey-title">${esc(wave.name)}</span>
+            ${wave.notes ? `<span class="survey-note">${esc(wave.notes)}</span>` : ''}
+          </td>
+          <td>${esc(formatDate(wave.starts_on))}</td>
+          <td>${esc(formatDate(wave.closes_on))}</td>
+          <td>${status}</td>
+          <td>${stats.total}</td>
+          <td>${stats.completed}${stats.total ? ` · ${Math.round(stats.completed / stats.total * 100)}%` : ''}</td>
+          <td class="row-actions">
+            ${wave.status === 'open'
+              ? `<button class="btn secondary small" type="button" data-close-wave="${esc(wave.id)}">Завершить</button>`
+              : ''}
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function closeWave(event) {
+      const button = event.target.closest('[data-close-wave]');
+      if (!button) return;
+      const wave = state.waves.find(item => item.id === button.dataset.closeWave);
+      if (!wave) return;
+      if (!confirm(`Завершить волну «${wave.name}»? После этого она появится в аналитике участия.`)) return;
+      button.disabled = true;
+      button.textContent = 'Завершение…';
+      try {
+        const result = await withTimeout(sb.from('survey_waves')
+          .update({ status: 'closed' })
+          .eq('id', wave.id));
+        if (result.error) throw result.error;
+        await loadData();
+      } catch (error) {
+        alert(`Не удалось завершить волну: ${error.message}`);
+        button.disabled = false;
+        button.textContent = 'Завершить';
       }
     }
 
@@ -992,7 +1320,7 @@
     function renderKpis() {
       const current = analysis.currentWave;
       if (!current) {
-        $('kpis').innerHTML = '<div class="empty">Добавьте волны опросов через импорт CSV.</div>';
+        $('kpis').innerHTML = '<div class="empty">Создайте волну вручную или импортируйте CSV. Для аналитики волна должна быть завершена.</div>';
         return;
       }
 
@@ -1135,6 +1463,7 @@
 
     function render() {
       analysis = buildAnalysis();
+      renderWaveJournal();
       renderKpis();
       renderCharts();
       renderWorklist();
@@ -1342,6 +1671,219 @@
       $('importTemplate').textContent = IMPORT_TEMPLATES[$('importType').value];
     }
 
+    function addDaysIso(value, days) {
+      const date = new Date(`${value}T12:00:00`);
+      date.setDate(date.getDate() + days);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function updateWaveAudienceSummary() {
+      const count = selectedWaveEmployeeIds.size;
+      $('waveAudienceSummary').innerHTML = count
+        ? `Выбрано: <strong>${count}</strong>`
+        : 'Никто не выбран';
+    }
+
+    function renderWaveEmployeePicker() {
+      if (!$('waveModalBg').classList.contains('open')) return;
+      const department = $('waveDepartmentFilter').value || 'ALL';
+      const query = $('waveEmployeeSearch').value.trim().toLowerCase();
+      const visible = state.rosterEmployees
+        .filter(employee => department === 'ALL' || employee.department === department)
+        .filter(employee => !query || `${employee.name} ${employee.position || ''}`.toLowerCase().includes(query))
+        .sort((left, right) =>
+          left.department.localeCompare(right.department, 'ru') ||
+          left.name.localeCompare(right.name, 'ru')
+        );
+
+      $('waveVisibleSummary').textContent = `Показано: ${visible.length}`;
+      $('waveEmployeeRows').innerHTML = visible.length
+        ? visible.map(employee => `
+          <label class="picker-row">
+            <input type="checkbox"
+              data-wave-employee-id="${esc(employee.id)}"
+              ${selectedWaveEmployeeIds.has(employee.id) ? 'checked' : ''}
+              aria-label="Добавить ${esc(employee.name)} в волну">
+            <span>
+              <strong>${esc(employee.name)}</strong>
+              <small>${esc(employee.department)}${employee.position ? ` · ${esc(employee.position)}` : ''}</small>
+            </span>
+          </label>`).join('')
+        : '<p class="hint" style="padding:12px;">Сотрудники по выбранному фильтру не найдены.</p>';
+      updateWaveAudienceSummary();
+    }
+
+    function openWaveModal() {
+      selectedWaveEmployeeIds.clear();
+      $('waveForm').reset();
+      const today = todayIso();
+      $('waveStartsOn').value = today;
+      $('waveClosesOn').value = addDaysIso(today, 14);
+      $('waveStatus').value = 'open';
+      $('waveDepartmentFilter').value = 'ALL';
+      $('waveEmployeeSearch').value = '';
+      $('waveModalBg').classList.add('open');
+      renderWaveEmployeePicker();
+      $('waveName').focus();
+    }
+
+    function closeWaveModal() {
+      $('waveModalBg').classList.remove('open');
+      selectedWaveEmployeeIds.clear();
+    }
+
+    function toggleWaveEmployee(event) {
+      const checkbox = event.target.closest('[data-wave-employee-id]');
+      if (!checkbox) return;
+      if (checkbox.checked) {
+        selectedWaveEmployeeIds.add(checkbox.dataset.waveEmployeeId);
+      } else {
+        selectedWaveEmployeeIds.delete(checkbox.dataset.waveEmployeeId);
+      }
+      updateWaveAudienceSummary();
+    }
+
+    function selectEntireWaveDepartment() {
+      const department = $('waveDepartmentFilter').value || 'ALL';
+      state.rosterEmployees
+        .filter(employee => department === 'ALL' || employee.department === department)
+        .forEach(employee => selectedWaveEmployeeIds.add(employee.id));
+      renderWaveEmployeePicker();
+    }
+
+    function clearWaveAudience() {
+      selectedWaveEmployeeIds.clear();
+      renderWaveEmployeePicker();
+    }
+
+    function createWaveCode(date) {
+      const now = new Date();
+      const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
+        .map(value => String(value).padStart(2, '0'))
+        .join('');
+      const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+      return `W${date.replaceAll('-', '')}-${time}-${suffix}`;
+    }
+
+    async function createWaveDirect(payload) {
+      const selected = state.rosterEmployees.filter(employee =>
+        payload.employeeIds.includes(employee.id)
+      );
+      if (!selected.length) throw new Error('В волне нет активных сотрудников.');
+
+      const wavePayload = {
+        code: payload.code,
+        name: payload.name,
+        starts_on: payload.startsOn,
+        closes_on: payload.closesOn,
+        status: payload.status,
+        notes: payload.notes
+      };
+      let waveResult = await withTimeout(sb.from('survey_waves')
+        .insert(wavePayload)
+        .select('id')
+        .single());
+
+      // The fallback also supports databases created before the notes column.
+      if (waveResult.error && /column .*notes|notes.*column|schema cache/i.test(waveResult.error.message)) {
+        delete wavePayload.notes;
+        waveResult = await withTimeout(sb.from('survey_waves')
+          .insert(wavePayload)
+          .select('id')
+          .single());
+      }
+      if (waveResult.error) throw waveResult.error;
+
+      const waveId = waveResult.data.id;
+      try {
+        const surveyEmployees = selected.map(employee => ({
+          external_id: `roster:${employee.id}`,
+          name: employee.name,
+          department: employee.department,
+          hire_date: employee.hired_on || null,
+          status: 'active'
+        }));
+        await upsertChunks('survey_employees', surveyEmployees, 'external_id');
+
+        const externalIds = surveyEmployees.map(employee => employee.external_id);
+        const employeeResult = await withTimeout(sb.from('survey_employees')
+          .select('id,external_id')
+          .in('external_id', externalIds));
+        if (employeeResult.error) throw employeeResult.error;
+
+        const participation = (employeeResult.data || []).map(employee => ({
+          wave_id: waveId,
+          employee_id: employee.id,
+          eligibility: 'eligible',
+          result: 'not_sent'
+        }));
+        await upsertChunks('survey_participation', participation, 'wave_id,employee_id');
+        return waveId;
+      } catch (error) {
+        await sb.from('survey_waves').delete().eq('id', waveId);
+        throw error;
+      }
+    }
+
+    async function saveWave(event) {
+      event.preventDefault();
+      const button = $('saveWaveButton');
+      const name = $('waveName').value.trim();
+      const startsOn = $('waveStartsOn').value;
+      const closesOn = $('waveClosesOn').value;
+      const employeeIds = [...selectedWaveEmployeeIds];
+
+      if (!name || !startsOn || !closesOn) {
+        alert('Заполните название и обе даты опроса.');
+        return;
+      }
+      if (closesOn < startsOn) {
+        alert('Дедлайн не может быть раньше даты проведения.');
+        return;
+      }
+      if (!employeeIds.length) {
+        alert('Добавьте в волну хотя бы одного сотрудника.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Создание…';
+      try {
+        const payload = {
+          code: createWaveCode(startsOn),
+          name,
+          startsOn,
+          closesOn,
+          status: $('waveStatus').value,
+          notes: $('waveNotes').value.trim() || null,
+          employeeIds
+        };
+        const result = await withTimeout(sb.rpc('create_survey_wave_with_roster', {
+          p_code: payload.code,
+          p_name: payload.name,
+          p_starts_on: payload.startsOn,
+          p_closes_on: payload.closesOn,
+          p_status: payload.status,
+          p_notes: payload.notes,
+          p_employee_ids: payload.employeeIds
+        }));
+        if (result.error) {
+          if (/could not find the function|function .* does not exist|schema cache/i.test(result.error.message)) {
+            await createWaveDirect(payload);
+          } else {
+            throw result.error;
+          }
+        }
+        closeWaveModal();
+        await loadData();
+      } catch (error) {
+        alert(`Не удалось создать волну: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Создать волну';
+      }
+    }
+
     function openImport() {
       updateImportTemplate();
       $('importModalBg').classList.add('open');
@@ -1389,14 +1931,28 @@
     });
     $('refreshButton').addEventListener('click', loadData);
     $('exportButton').addEventListener('click', exportCsv);
+    $('newWaveButton').addEventListener('click', openWaveModal);
+    $('journalNewWaveButton').addEventListener('click', openWaveModal);
     $('importButton').addEventListener('click', openImport);
+    $('closeWaveButton').addEventListener('click', closeWaveModal);
+    $('cancelWaveButton').addEventListener('click', closeWaveModal);
+    $('selectWaveDepartmentButton').addEventListener('click', selectEntireWaveDepartment);
+    $('clearWaveAudienceButton').addEventListener('click', clearWaveAudience);
     $('closeImportButton').addEventListener('click', closeImport);
     $('cancelImportButton').addEventListener('click', closeImport);
     $('closeAuthButton').addEventListener('click', closeAuth);
     $('cancelAuthButton').addEventListener('click', closeAuth);
+    $('waveModalBg').addEventListener('click', event => {
+      if (event.target === $('waveModalBg')) closeWaveModal();
+    });
     $('importModalBg').addEventListener('click', event => {
       if (event.target === $('importModalBg')) closeImport();
     });
+    $('waveForm').addEventListener('submit', saveWave);
+    $('waveDepartmentFilter').addEventListener('change', renderWaveEmployeePicker);
+    $('waveEmployeeSearch').addEventListener('input', renderWaveEmployeePicker);
+    $('waveEmployeeRows').addEventListener('change', toggleWaveEmployee);
+    $('waveJournalBody').addEventListener('click', closeWave);
     $('importForm').addEventListener('submit', importCsv);
     $('authForm').addEventListener('submit', submitAuth);
     $('importType').addEventListener('change', updateImportTemplate);
@@ -1405,6 +1961,7 @@
     $('worklistBody').addEventListener('click', saveFollowup);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
+        closeWaveModal();
         closeImport();
         closeAuth();
       }

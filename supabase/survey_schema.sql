@@ -12,9 +12,13 @@ create table if not exists public.survey_employees (
   manager text,
   hire_date date,
   status text not null default 'active' check (status in ('active', 'inactive')),
+  roster_employee_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.survey_employees
+  add column if not exists roster_employee_id uuid;
 
 create table if not exists public.survey_waves (
   id uuid primary key default gen_random_uuid(),
@@ -23,9 +27,13 @@ create table if not exists public.survey_waves (
   starts_on date not null,
   closes_on date not null,
   status text not null default 'closed' check (status in ('open', 'closed')),
+  notes text,
   created_at timestamptz not null default now(),
   constraint survey_wave_dates_check check (closes_on >= starts_on)
 );
+
+alter table public.survey_waves
+  add column if not exists notes text;
 
 create table if not exists public.survey_participation (
   id uuid primary key default gen_random_uuid(),
