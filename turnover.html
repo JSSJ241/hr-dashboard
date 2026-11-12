@@ -356,6 +356,76 @@
       font-size: 9px;
     }
     .department-row input { width: 100%; }
+    .employee-filter-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .employee-filter-row label {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .employee-filter-row input,
+    .employee-filter-row select {
+      width: 100%;
+      margin-top: 6px;
+    }
+    .employee-list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 14px 0 8px;
+    }
+    .employee-select-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .employee-list {
+      display: grid;
+      gap: 7px;
+      max-height: 330px;
+      padding-right: 4px;
+      overflow-y: auto;
+    }
+    .employee-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+    .employee-row strong {
+      display: block;
+      font-size: 11px;
+    }
+    .employee-row small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .employee-row input[type="checkbox"] { min-height: auto; }
+    .employee-add {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    .employee-add h3 { margin-bottom: 9px; }
+    .employee-add-action {
+      display: flex;
+      align-items: flex-end;
+    }
     .hint {
       margin-top: 6px;
       color: var(--muted);
@@ -455,6 +525,7 @@
         <option value="Другое">Другое</option>
       </select>
       <button class="btn push" type="button" id="addButton">+ Добавить увольнение</button>
+      <button class="btn secondary small" type="button" id="employeesButton">Сотрудники</button>
       <button class="btn secondary small" type="button" id="departmentsButton">Отделы</button>
       <button class="btn secondary small" type="button" id="exportButton">CSV</button>
       <button class="btn secondary small" type="button" id="refreshButton">Обновить</button>
@@ -528,8 +599,9 @@
         <button class="btn secondary small" id="closeModalButton" type="button" aria-label="Закрыть">×</button>
       </div>
       <input id="editId" type="hidden">
+      <input id="employeeRecordId" type="hidden">
       <div class="form-row">
-        <label>Сотрудник<input id="employeeName" required placeholder="Фамилия И.О."></label>
+        <label>Сотрудник<input id="employeeName" required list="employeeSuggestions" placeholder="Начните вводить имя"><datalist id="employeeSuggestions"></datalist></label>
         <label>Отдел<input id="employeeDept" required list="deptList" placeholder="Например, SEO-производство"><datalist id="deptList"></datalist></label>
       </div>
       <div class="form-row">
@@ -566,18 +638,61 @@
         </div>
         <button class="btn secondary small" id="closeDepartmentsButton" type="button" aria-label="Закрыть">×</button>
       </div>
-      <p class="hint">Численность используется как знаменатель в расчёте текучести. Указывайте актуальное количество сотрудников в каждом отделе.</p>
+      <p class="hint">Численность рассчитывается по активным сотрудникам. При увольнении отдел уменьшается, при добавлении нового сотрудника — увеличивается.</p>
       <div class="department-editor" id="departmentRows"></div>
-      <div class="form-row">
+      <div class="form-row full">
         <label>Новый отдел<input id="newDepartmentName" placeholder="Например, SEO-производство"></label>
-        <label>Численность, чел.<input id="newDepartmentEmployees" type="number" min="1" step="1" value="1"></label>
       </div>
-      <p class="hint">Новый отдел можно добавить вместе с численностью. Удаление отделов не предусмотрено, чтобы не разорвать историю увольнений.</p>
+      <p class="hint">Новый отдел создаётся с нулевой численностью. Удаление отделов не предусмотрено, чтобы не разорвать историю увольнений.</p>
       <div class="modal-actions">
         <button class="btn secondary" id="cancelDepartmentsButton" type="button">Отмена</button>
-        <button class="btn" id="saveDepartmentsButton" type="submit">Сохранить численность</button>
+        <button class="btn" id="saveDepartmentsButton" type="submit">Добавить отдел</button>
       </div>
     </form>
+  </div>
+
+  <div class="modal-bg" id="employeesModalBg" role="dialog" aria-modal="true" aria-labelledby="employeesModalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Общий реестр</p>
+          <h2 id="employeesModalTitle">Сотрудники</h2>
+        </div>
+        <button class="btn secondary small" id="closeEmployeesButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <p class="hint">Численность отделов синхронизируется с активными сотрудниками. Увольнение уменьшает отдел на 1, добавление увеличивает на 1.</p>
+      <div class="employee-filter-row">
+        <label>Отдел<select id="employeeDepartmentFilter"></select></label>
+        <label>Поиск сотрудника<input id="employeeSearchInput" placeholder="Имя или должность"></label>
+      </div>
+      <div class="employee-list-head">
+        <label class="employee-select-all">
+          <input type="checkbox" id="selectAllEmployees">
+          Выбрать всех в списке
+        </label>
+        <span class="muted" id="employeeSelectionSummary">Никто не выбран</span>
+      </div>
+      <div class="employee-list" id="employeeRows"></div>
+      <div class="modal-actions employee-actions">
+        <button class="btn danger small" id="terminateSelectedButton" type="button" disabled>Уволить выбранных</button>
+      </div>
+      <div class="employee-add">
+        <h3>Добавить сотрудника</h3>
+        <div class="form-row">
+          <label>Имя<input id="newEmployeeName" placeholder="Фамилия Имя"></label>
+          <label>Отдел<select id="newEmployeeDepartment"></select></label>
+        </div>
+        <div class="form-row">
+          <label>Должность<input id="newEmployeePosition" placeholder="Необязательно"></label>
+          <div class="employee-add-action">
+            <button class="btn" id="addEmployeeButton" type="button">Добавить в реестр</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" id="closeEmployeesBottomButton" type="button">Закрыть</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -641,6 +756,9 @@
 
     let records = [];
     let departments = [];
+    let employees = [];
+    let openEmployeesAfterLoad = new URLSearchParams(window.location.search).get('open') === 'employees';
+    const selectedEmployeeIds = new Set();
     let charts = {};
 
     const $ = (id) => document.getElementById(id);
@@ -660,7 +778,7 @@
       const notice = $('setupNotice');
       console.error('Turnover setup error:', message);
       if (missingTables) {
-        notice.innerHTML = 'Раздел текучести подготовлен, но таблицы ещё не подключены к общей базе. Администратору нужно выполнить <code>supabase/turnover_schema.sql</code> в SQL Editor проекта Supabase.';
+        notice.innerHTML = 'Раздел текучести подготовлен, но таблицы ещё не подключены к общей базе. Администратору нужно выполнить <code>supabase/turnover_schema.sql</code> и <code>supabase/employee_roster.sql</code> в SQL Editor проекта Supabase.';
       } else {
         notice.innerHTML = `<strong>Нет соединения с Supabase.</strong><br>${timeout
           ? 'Supabase не ответил за 12 секунд. Проверьте интернет, VPN и блокировщики браузера.'
@@ -670,6 +788,7 @@
       $('loading').hidden = true;
       $('content').hidden = true;
       $('addButton').disabled = true;
+      $('employeesButton').disabled = true;
       $('departmentsButton').disabled = true;
       $('exportButton').disabled = true;
       setConnection('off', missingTables ? 'требуется настройка' : timeout ? 'нет соединения' : 'ошибка загрузки');
@@ -696,13 +815,16 @@
         if (!navigator.onLine) {
           throw new Error('Браузер не подключён к интернету.');
         }
-        const [departmentResult, terminationResult] = await withTimeout(Promise.all([
+        const [departmentResult, terminationResult, employeeResult] = await withTimeout(Promise.all([
           sb.from('departments').select('*').order('name'),
-          sb.from('terminations').select('*').order('date', { ascending: false })
+          sb.from('terminations').select('*').order('date', { ascending: false }),
+          sb.from('employees').select('*').eq('active', true).order('name')
         ]));
         if (departmentResult.error) throw departmentResult.error;
         if (terminationResult.error) throw terminationResult.error;
+        if (employeeResult.error) throw employeeResult.error;
         departments = departmentResult.data || [];
+        employees = employeeResult.data || [];
         records = (terminationResult.data || []).map(record => ({
           ...record,
           termination_type: record.termination_type || 'Другое',
@@ -710,12 +832,17 @@
         }));
         fillDepartmentOptions();
         $('addButton').disabled = false;
+        $('employeesButton').disabled = false;
         $('departmentsButton').disabled = false;
         $('exportButton').disabled = false;
         $('loading').hidden = true;
         $('content').hidden = false;
         setConnection('on', 'данные актуальны');
         render();
+        if (openEmployeesAfterLoad) {
+          openEmployeesAfterLoad = false;
+          openEmployees();
+        }
       } catch (error) {
         showSetupError(error);
       }
@@ -727,6 +854,140 @@
         departments.map(department => `<option value="${esc(department.name)}">${esc(department.name)} · ${department.employees} чел.</option>`).join('');
       $('deptList').innerHTML = departments.map(department => `<option value="${esc(department.name)}">${department.employees} чел.</option>`).join('');
       if ([...$('departmentFilter').options].some(option => option.value === current)) $('departmentFilter').value = current;
+      fillEmployeeDepartmentOptions();
+      $('employeeSuggestions').innerHTML = employees.map(employee =>
+        `<option value="${esc(employee.name)}">${esc(employee.dept)}</option>`
+      ).join('');
+    }
+
+    function fillEmployeeDepartmentOptions() {
+      const currentFilter = $('employeeDepartmentFilter').value || 'ALL';
+      const currentNew = $('newEmployeeDepartment').value;
+      const options = departments.map(department =>
+        `<option value="${esc(department.name)}">${esc(department.name)} · ${department.employees} чел.</option>`
+      ).join('');
+      $('employeeDepartmentFilter').innerHTML = '<option value="ALL">Все отделы</option>' + options;
+      $('newEmployeeDepartment').innerHTML = options;
+      if ([...$('employeeDepartmentFilter').options].some(option => option.value === currentFilter)) {
+        $('employeeDepartmentFilter').value = currentFilter;
+      }
+      if ([...$('newEmployeeDepartment').options].some(option => option.value === currentNew)) {
+        $('newEmployeeDepartment').value = currentNew;
+      }
+    }
+
+    function employeeSelectionSummary() {
+      const count = selectedEmployeeIds.size;
+      $('employeeSelectionSummary').textContent = count
+        ? `Выбрано: ${count}`
+        : 'Никто не выбран';
+      $('terminateSelectedButton').disabled = count === 0;
+    }
+
+    function renderEmployeeEditor() {
+      if (!$('employeesModalBg').classList.contains('open')) return;
+      const department = $('employeeDepartmentFilter').value || 'ALL';
+      const query = $('employeeSearchInput').value.trim().toLowerCase();
+      const visible = employees
+        .filter(employee => department === 'ALL' || employee.dept === department)
+        .filter(employee => !query || `${employee.name} ${employee.position || ''}`.toLowerCase().includes(query))
+        .sort((left, right) => left.dept.localeCompare(right.dept, 'ru') || left.name.localeCompare(right.name, 'ru'));
+
+      $('employeeRows').innerHTML = visible.length
+        ? visible.map(employee => `
+          <div class="employee-row">
+            <input type="checkbox" class="employee-checkbox"
+              data-employee-id="${esc(employee.id)}"
+              ${selectedEmployeeIds.has(employee.id) ? 'checked' : ''}
+              aria-label="Выбрать ${esc(employee.name)}">
+            <span>
+              <strong>${esc(employee.name)}</strong>
+              <small>${esc(employee.dept)}${employee.position ? ` · ${esc(employee.position)}` : ''}</small>
+            </span>
+            <button class="btn secondary small" type="button" data-terminate-employee="${esc(employee.id)}">Уволить</button>
+          </div>`).join('')
+        : '<p class="hint">Сотрудники по выбранному фильтру не найдены.</p>';
+
+      $('selectAllEmployees').checked = visible.length > 0 && visible.every(employee => selectedEmployeeIds.has(employee.id));
+      $('selectAllEmployees').disabled = visible.length === 0;
+      employeeSelectionSummary();
+    }
+
+    function openEmployees() {
+      fillEmployeeDepartmentOptions();
+      $('employeesModalBg').classList.add('open');
+      renderEmployeeEditor();
+      $('employeeSearchInput').focus();
+    }
+
+    function closeEmployees() {
+      $('employeesModalBg').classList.remove('open');
+    }
+
+    async function terminateEmployees(ids) {
+      const selected = employees.filter(employee => ids.includes(employee.id));
+      if (!selected.length) return;
+      const label = selected.length === 1
+        ? `Уволить сотрудника «${selected[0].name}»?`
+        : `Уволить выбранных сотрудников: ${selected.length}?`;
+      if (!confirm(label)) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const result = await sb.from('employees')
+        .update({ active: false, terminated_on: today })
+        .in('id', ids);
+      if (result.error) {
+        alert(`Не удалось обновить реестр: ${result.error.message}`);
+        return;
+      }
+      ids.forEach(id => selectedEmployeeIds.delete(id));
+      await loadData();
+      renderEmployeeEditor();
+    }
+
+    async function addEmployee() {
+      const name = $('newEmployeeName').value.trim();
+      const dept = $('newEmployeeDepartment').value;
+      const position = $('newEmployeePosition').value.trim();
+      if (!name || !dept) {
+        alert('Укажите имя и отдел сотрудника.');
+        return;
+      }
+      const duplicate = employees.some(employee =>
+        employee.name.toLowerCase() === name.toLowerCase() && employee.dept === dept
+      );
+      if (duplicate) {
+        alert('Такой сотрудник уже есть в выбранном отделе.');
+        return;
+      }
+      const button = $('addEmployeeButton');
+      button.disabled = true;
+      button.textContent = 'Добавление…';
+      try {
+        const result = await sb.from('employees').insert({ name, dept, position: position || null });
+        if (result.error) throw result.error;
+        $('newEmployeeName').value = '';
+        $('newEmployeePosition').value = '';
+        await loadData();
+        renderEmployeeEditor();
+      } catch (error) {
+        alert(`Не удалось добавить сотрудника: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Добавить в реестр';
+      }
+    }
+
+    function syncEmployeeSelection() {
+      const name = $('employeeName').value.trim().toLowerCase();
+      const dept = $('employeeDept').value.trim().toLowerCase();
+      const matches = employees.filter(employee => employee.name.toLowerCase() === name);
+      const match = matches.find(employee => !dept || employee.dept.toLowerCase() === dept)
+        || (matches.length === 1 ? matches[0] : null);
+      $('employeeRecordId').value = match?.id || '';
+      if (match && !$('employeeDept').value.trim()) $('employeeDept').value = match.dept;
+      if (match && !$('employeePosition').value.trim() && match.position) {
+        $('employeePosition').value = match.position;
+      }
     }
 
     function filteredRecords() {
@@ -828,14 +1089,20 @@
         options: { ...chartFrame(), indexAxis: 'y', plugins: { legend: { display: false } } }
       });
 
-      const departmentLabels = departments.map(item => item.name);
       const departmentRates = departments.map(item => {
         const count = records.filter(record => record.dept === item.name && data.includes(record)).length;
-        return Number((count / Math.max(1, Number(item.employees)) * 100).toFixed(1));
-      });
+        return {
+          name: item.name,
+          count,
+          rate: Number((count / Math.max(1, Number(item.employees)) * 100).toFixed(1))
+        };
+      }).filter(item => item.count > 0).sort((left, right) => right.rate - left.rate).slice(0, 12);
       drawChart('departmentChart', {
         type: 'bar',
-        data: { labels: departmentLabels, datasets: [{ data: departmentRates, backgroundColor: '#5f806d', borderRadius: 6 }] },
+        data: {
+          labels: departmentRates.map(item => `${item.name} · ${item.count}`),
+          datasets: [{ data: departmentRates.map(item => item.rate), backgroundColor: '#5f806d', borderRadius: 6 }]
+        },
         options: { ...chartFrame(), plugins: { legend: { display: false } } }
       });
 
@@ -891,6 +1158,7 @@
     function setModal(record = null) {
       $('modalTitle').textContent = record ? 'Редактировать запись' : 'Добавить запись';
       $('editId').value = record?.id || '';
+      $('employeeRecordId').value = record?.employee_id || '';
       $('employeeName').value = record?.name || '';
       $('employeeDept').value = record?.dept || '';
       $('employeePosition').value = record?.position || '';
@@ -912,19 +1180,15 @@
       const sorted = [...departments].sort((left, right) => left.name.localeCompare(right.name, 'ru'));
       $('departmentRows').innerHTML = sorted.length
         ? sorted.map(department => `
-          <label class="department-row">
+          <div class="department-row">
             <span>
               <strong>${esc(department.name)}</strong>
-              <small>Текущее значение: ${department.employees} чел.</small>
+              <small>Активных сотрудников: ${department.employees}</small>
             </span>
-            <input type="number" min="1" step="1" required
-              data-department-id="${esc(department.id)}"
-              value="${Number(department.employees) || 1}"
-              aria-label="Численность отдела ${esc(department.name)}">
-          </label>`).join('')
+            <strong>${department.employees} чел.</strong>
+          </div>`).join('')
         : '<p class="hint">Отделы появятся здесь после первого добавления или создайте новый ниже.</p>';
       $('newDepartmentName').value = '';
-      $('newDepartmentEmployees').value = 1;
     }
 
     function openDepartments() {
@@ -943,28 +1207,12 @@
       button.disabled = true;
       button.textContent = 'Сохранение…';
       try {
-        const updates = [...$('departmentRows').querySelectorAll('[data-department-id]')]
-          .map(input => ({
-            id: input.dataset.departmentId,
-            employees: Number(input.value)
-          }))
-          .filter(item => Number.isInteger(item.employees) && item.employees > 0);
-
-        for (const update of updates) {
-          const result = await sb.from('departments').update({ employees: update.employees }).eq('id', update.id);
-          if (result.error) throw result.error;
-        }
-
         const newName = $('newDepartmentName').value.trim();
-        const newEmployees = Number($('newDepartmentEmployees').value);
         if (newName) {
-          if (!Number.isInteger(newEmployees) || newEmployees < 1) {
-            throw new Error('Укажите численность нового отдела целым числом больше нуля.');
-          }
           if (departments.some(item => item.name.toLowerCase() === newName.toLowerCase())) {
             throw new Error('Такой отдел уже существует.');
           }
-          const result = await sb.from('departments').insert({ name: newName, employees: newEmployees });
+          const result = await sb.from('departments').insert({ name: newName, employees: 0 });
           if (result.error) throw result.error;
         }
 
@@ -974,14 +1222,14 @@
         alert(`Не удалось сохранить отделы: ${error.message}`);
       } finally {
         button.disabled = false;
-        button.textContent = 'Сохранить численность';
+        button.textContent = 'Добавить отдел';
       }
     }
 
     async function ensureDepartment(name) {
       const existing = departments.find(item => item.name.toLowerCase() === name.toLowerCase());
       if (existing) return existing.name;
-      const result = await sb.from('departments').insert({ name, employees: 1 }).select().single();
+      const result = await sb.from('departments').insert({ name, employees: 0 }).select().single();
       if (result.error) throw result.error;
       departments.push(result.data);
       fillDepartmentOptions();
@@ -998,6 +1246,8 @@
         const reason = $('reasonSelect').value;
         const suggested = REASONS.find(([item]) => item === reason)?.[1] || $('typeSelect').value;
         const department = await ensureDepartment($('employeeDept').value.trim());
+        const selectedEmployeeId = $('employeeRecordId').value;
+        const selectedEmployee = employees.find(employee => employee.id === selectedEmployeeId);
         const payload = {
           name: $('employeeName').value.trim(),
           dept: department,
@@ -1009,9 +1259,22 @@
           termination_type: $('typeSelect').value,
           value_score: Number($('valueScore').value) || 5
         };
-        const result = id
-          ? await sb.from('terminations').update(payload).eq('id', id)
-          : await sb.from('terminations').insert(payload);
+        let result;
+        if (!id && selectedEmployee) {
+          result = await sb.rpc('record_employee_termination', {
+            p_employee_id: selectedEmployee.id,
+            p_reason: reason,
+            p_type: suggested,
+            p_termination_type: $('typeSelect').value,
+            p_date: $('terminationDate').value,
+            p_tenure_months: Number($('tenureMonths').value) || 0,
+            p_value_score: Number($('valueScore').value) || 5
+          });
+        } else {
+          result = id
+            ? await sb.from('terminations').update(payload).eq('id', id)
+            : await sb.from('terminations').insert(payload);
+        }
         if (result.error) throw result.error;
         closeModal();
         await loadData();
@@ -1053,9 +1316,12 @@
       window.location.replace('index.html');
     });
     $('addButton').addEventListener('click', () => setModal());
+    $('employeesButton').addEventListener('click', openEmployees);
     $('departmentsButton').addEventListener('click', openDepartments);
     $('closeModalButton').addEventListener('click', closeModal);
     $('cancelModalButton').addEventListener('click', closeModal);
+    $('closeEmployeesButton').addEventListener('click', closeEmployees);
+    $('closeEmployeesBottomButton').addEventListener('click', closeEmployees);
     $('closeDepartmentsButton').addEventListener('click', closeDepartments);
     $('cancelDepartmentsButton').addEventListener('click', closeDepartments);
     $('modalBg').addEventListener('click', event => {
@@ -1064,8 +1330,36 @@
     $('departmentsModalBg').addEventListener('click', event => {
       if (event.target === $('departmentsModalBg')) closeDepartments();
     });
+    $('employeesModalBg').addEventListener('click', event => {
+      if (event.target === $('employeesModalBg')) closeEmployees();
+    });
     $('recordForm').addEventListener('submit', saveRecord);
     $('departmentsForm').addEventListener('submit', saveDepartments);
+    $('employeeDepartmentFilter').addEventListener('change', renderEmployeeEditor);
+    $('employeeSearchInput').addEventListener('input', renderEmployeeEditor);
+    $('selectAllEmployees').addEventListener('change', event => {
+      document.querySelectorAll('.employee-checkbox').forEach(checkbox => {
+        checkbox.checked = event.target.checked;
+        if (checkbox.checked) selectedEmployeeIds.add(checkbox.dataset.employeeId);
+        else selectedEmployeeIds.delete(checkbox.dataset.employeeId);
+      });
+      employeeSelectionSummary();
+    });
+    $('employeeRows').addEventListener('change', event => {
+      const checkbox = event.target.closest('.employee-checkbox');
+      if (!checkbox) return;
+      if (checkbox.checked) selectedEmployeeIds.add(checkbox.dataset.employeeId);
+      else selectedEmployeeIds.delete(checkbox.dataset.employeeId);
+      employeeSelectionSummary();
+    });
+    $('employeeRows').addEventListener('click', event => {
+      const button = event.target.closest('[data-terminate-employee]');
+      if (button) terminateEmployees([button.dataset.terminateEmployee]);
+    });
+    $('terminateSelectedButton').addEventListener('click', () => terminateEmployees([...selectedEmployeeIds]));
+    $('addEmployeeButton').addEventListener('click', addEmployee);
+    $('employeeName').addEventListener('input', syncEmployeeSelection);
+    $('employeeDept').addEventListener('input', syncEmployeeSelection);
     $('refreshButton').addEventListener('click', loadData);
     $('exportButton').addEventListener('click', exportCsv);
     ['periodFilter', 'departmentFilter', 'typeFilter'].forEach(id => $(id).addEventListener('change', render));
@@ -1073,6 +1367,7 @@
       if (event.key === 'Escape') {
         closeModal();
         closeDepartments();
+        closeEmployees();
       }
     });
     $('termTableBody').addEventListener('click', event => {
