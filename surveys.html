@@ -918,18 +918,17 @@
       </div>
       <p class="hint">
         Введите рабочую почту и пароль, выданный администратором дашборда.
-        Если пароля нет, можно получить одноразовую ссылку на ту же почту.
+        Электронные письма для входа не используются.
       </p>
       <label>Рабочая почта
         <input id="authEmail" type="email" autocomplete="username" required>
       </label>
-      <label id="authPasswordLabel" hidden>Пароль
-        <input id="authPassword" type="password" autocomplete="current-password">
+      <label>Пароль
+        <input id="authPassword" type="password" autocomplete="current-password" required>
       </label>
       <p class="auth-message" id="authMessage" role="status"></p>
       <div class="modal-actions">
         <button class="btn secondary" id="cancelAuthButton" type="button">Отмена</button>
-        <button class="btn secondary" id="passwordModeButton" type="button">Войти по ссылке</button>
         <button class="btn" id="submitAuthButton" type="submit">Войти</button>
       </div>
     </form>
@@ -1017,7 +1016,6 @@
     let charts = {};
     let analysis = null;
     let authUser = null;
-    let authMode = 'password';
     const selectedWaveEmployeeIds = new Set();
 
     function setConnection(kind, label) {
@@ -1973,30 +1971,13 @@
       $('importModalBg').classList.remove('open');
     }
 
-    function setAuthMode(mode) {
-      authMode = mode;
-      const passwordMode = mode === 'password';
-      $('authPasswordLabel').hidden = !passwordMode;
-      $('authPassword').required = passwordMode;
-      $('passwordModeButton').textContent = passwordMode ? 'Войти по ссылке' : 'Войти с паролем';
-      $('submitAuthButton').textContent = passwordMode ? 'Войти' : 'Отправить ссылку';
-      $('authMessage').className = 'auth-message';
-      $('authMessage').textContent = '';
-      if (!passwordMode) $('authPassword').value = '';
-    }
-
-    function toggleAuthMode() {
-      setAuthMode(authMode === 'magic' ? 'password' : 'magic');
-      if (authMode === 'password') $('authPassword').focus();
-    }
-
     function showAuthMessage(message, isError = false) {
       $('authMessage').textContent = message;
       $('authMessage').className = `auth-message show${isError ? ' error' : ''}`;
     }
 
     function openAuth() {
-      setAuthMode('password');
+      $('authMessage').className = 'auth-message';
       $('authModalBg').classList.add('open');
       $('authEmail').focus();
     }
@@ -2012,31 +1993,17 @@
       const button = $('submitAuthButton');
       const email = $('authEmail').value.trim();
       button.disabled = true;
-      button.textContent = authMode === 'magic' ? 'Отправка…' : 'Вход…';
+      button.textContent = 'Вход…';
       try {
-        if (authMode === 'magic') {
-          const result = await withTimeout(sb.auth.signInWithOtp({
-            email,
-            options: {
-              shouldCreateUser: false,
-              emailRedirectTo: `${window.location.origin}${window.location.pathname}`
-            }
-          }));
-          if (result.error) throw result.error;
-          showAuthMessage(
-            `Ссылка отправлена на ${email}. Откройте письмо на этом устройстве или на телефоне и перейдите по ссылке.`
-          );
-        } else {
-          const result = await withTimeout(sb.auth.signInWithPassword({
-            email,
-            password: $('authPassword').value
-          }));
-          if (result.error) throw result.error;
-          authUser = result.data.user;
-          sessionStorage.setItem('hr_auth', 'ok');
-          closeAuth();
-          await loadData();
-        }
+        const result = await withTimeout(sb.auth.signInWithPassword({
+          email,
+          password: $('authPassword').value
+        }));
+        if (result.error) throw result.error;
+        authUser = result.data.user;
+        sessionStorage.setItem('hr_auth', 'ok');
+        closeAuth();
+        await loadData();
       } catch (error) {
         const message = /invalid login credentials/i.test(error.message)
           ? 'Неверная почта или пароль Supabase.'
@@ -2046,7 +2013,7 @@
         showAuthMessage(`Не удалось выполнить вход: ${message}`, true);
       } finally {
         button.disabled = false;
-        button.textContent = authMode === 'magic' ? 'Отправить ещё раз' : 'Войти';
+        button.textContent = 'Войти';
       }
     }
 
@@ -2068,7 +2035,6 @@
     $('cancelImportButton').addEventListener('click', closeImport);
     $('closeAuthButton').addEventListener('click', closeAuth);
     $('cancelAuthButton').addEventListener('click', closeAuth);
-    $('passwordModeButton').addEventListener('click', toggleAuthMode);
     $('waveModalBg').addEventListener('click', event => {
       if (event.target === $('waveModalBg')) closeWaveModal();
     });
