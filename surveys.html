@@ -435,6 +435,10 @@
       text-transform: uppercase;
     }
 
+    .modal label[hidden] {
+      display: none;
+    }
+
     .modal input,
     .modal select {
       width: 100%;
@@ -609,6 +613,28 @@
       color: var(--muted);
       font-size: 10px;
       line-height: 1.55;
+    }
+
+    .auth-message {
+      display: none;
+      margin: 12px 0 0;
+      padding: 11px 12px;
+      border: 1px solid rgba(95, 128, 109, .24);
+      border-radius: 10px;
+      color: #44614f;
+      background: var(--sage-soft);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .auth-message.show {
+      display: block;
+    }
+
+    .auth-message.error {
+      border-color: rgba(223, 101, 94, .24);
+      color: #8d3b35;
+      background: var(--coral-soft);
     }
 
     .modal-actions {
@@ -891,24 +917,29 @@
         <button class="btn secondary small" id="closeAuthButton" type="button" aria-label="Закрыть">×</button>
       </div>
       <p class="hint">
-        Используйте рабочую учётную запись из Supabase Authentication. Пароль
-        общего экрана дашборда здесь не действует.
+        Введите рабочую почту — Supabase отправит одноразовую ссылку для входа.
+        Пользователь должен заранее существовать в Supabase Authentication.
       </p>
       <label>Рабочая почта
         <input id="authEmail" type="email" autocomplete="username" required>
       </label>
-      <label>Пароль
-        <input id="authPassword" type="password" autocomplete="current-password" required>
+      <label id="authPasswordLabel" hidden>Пароль
+        <input id="authPassword" type="password" autocomplete="current-password">
       </label>
+      <p class="auth-message" id="authMessage" role="status"></p>
       <div class="modal-actions">
         <button class="btn secondary" id="cancelAuthButton" type="button">Отмена</button>
-        <button class="btn" id="submitAuthButton" type="submit">Войти</button>
+        <button class="btn secondary" id="passwordModeButton" type="button">Войти с паролем</button>
+        <button class="btn" id="submitAuthButton" type="submit">Отправить ссылку</button>
       </div>
     </form>
   </div>
 
   <script>
-    if (sessionStorage.getItem('hr_auth') !== 'ok') {
+    const hasAuthCallback = /(?:access_token|refresh_token|error_description|code)=/.test(
+      `${window.location.search}${window.location.hash}`
+    );
+    if (sessionStorage.getItem('hr_auth') !== 'ok' && !hasAuthCallback) {
       window.location.replace('index.html');
     }
 
@@ -937,7 +968,7 @@
     }
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       global: { fetch: fetchWithTimeout }
     });
 
@@ -986,6 +1017,7 @@
     let charts = {};
     let analysis = null;
     let authUser = null;
+    let authMode = 'magic';
     const selectedWaveEmployeeIds = new Set();
 
     function setConnection(kind, label) {
@@ -1025,10 +1057,10 @@
       const notice = $('setupNotice');
       notice.innerHTML = `
         <strong>Требуется вход в Supabase.</strong><br>
-        Чтобы видеть волны и сохранять данные, войдите под рабочей учётной записью
-        из Supabase Authentication. Пароль общего экрана дашборда здесь не действует.
+        Чтобы видеть волны и сохранять данные, войдите по ссылке из письма.
+        Пользователь должен существовать в Supabase Authentication.
         <br><button class="btn small" type="button" onclick="openAuth()" style="margin-top:10px;">
-          Войти в Supabase
+          Получить ссылку для входа
         </button>`;
       notice.classList.add('show');
       setConnection('off', 'требуется вход');
@@ -1036,8 +1068,8 @@
 
     async function refreshAuthUser() {
       try {
-        const result = await withTimeout(sb.auth.getUser());
-        authUser = result.error ? null : result.data?.user || null;
+        const result = await withTimeout(sb.auth.getSession());
+        authUser = result.error ? null : result.data?.session?.user || null;
       } catch (error) {
         authUser = null;
       }
@@ -1941,7 +1973,30 @@
       $('importModalBg').classList.remove('open');
     }
 
+    function setAuthMode(mode) {
+      authMode = mode;
+      const passwordMode = mode === 'password';
+      $('authPasswordLabel').hidden = !passwordMode;
+      $('authPassword').required = passwordMode;
+      $('passwordModeButton').textContent = passwordMode ? 'Войти по ссылке' : 'Войти с паролем';
+      $('submitAuthButton').textContent = passwordMode ? 'Войти' : 'Отправить ссылку';
+      $('authMessage').className = 'auth-message';
+      $('authMessage').textContent = '';
+      if (!passwordMode) $('authPassword').value = '';
+    }
+
+    function toggleAuthMode() {
+      setAuthMode(authMode === 'magic' ? 'password' : 'magic');
+      if (authMode === 'password') $('authPassword').focus();
+    }
+
+    function showAuthMessage(message, isError = false) {
+      $('authMessage').textContent = message;
+      $('authMessage').className = `auth-message show${isError ? ' error' : ''}`;
+    }
+
     function openAuth() {
+      setAuthMode('magic');
       $('authModalBg').classList.add('open');
       $('authEmail').focus();
     }
@@ -1949,30 +2004,49 @@
     function closeAuth() {
       $('authModalBg').classList.remove('open');
       $('authPassword').value = '';
+      $('authMessage').className = 'auth-message';
     }
 
     async function submitAuth(event) {
       event.preventDefault();
       const button = $('submitAuthButton');
+      const email = $('authEmail').value.trim();
       button.disabled = true;
-      button.textContent = 'Вход…';
+      button.textContent = authMode === 'magic' ? 'Отправка…' : 'Вход…';
       try {
-        const result = await withTimeout(sb.auth.signInWithPassword({
-          email: $('authEmail').value.trim(),
-          password: $('authPassword').value
-        }));
-        if (result.error) throw result.error;
-        authUser = result.data.user;
-        closeAuth();
-        await loadData();
+        if (authMode === 'magic') {
+          const result = await withTimeout(sb.auth.signInWithOtp({
+            email,
+            options: {
+              shouldCreateUser: false,
+              emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+            }
+          }));
+          if (result.error) throw result.error;
+          showAuthMessage(
+            `Ссылка отправлена на ${email}. Откройте письмо на этом устройстве или на телефоне и перейдите по ссылке.`
+          );
+        } else {
+          const result = await withTimeout(sb.auth.signInWithPassword({
+            email,
+            password: $('authPassword').value
+          }));
+          if (result.error) throw result.error;
+          authUser = result.data.user;
+          sessionStorage.setItem('hr_auth', 'ok');
+          closeAuth();
+          await loadData();
+        }
       } catch (error) {
         const message = /invalid login credentials/i.test(error.message)
-          ? 'Неверная почта или пароль Supabase. Проверьте пользователя в Supabase → Authentication → Users. Пароль общего экрана дашборда здесь не подходит.'
-          : error.message;
-        alert(`Не удалось войти: ${message}`);
+          ? 'Неверная почта или пароль Supabase.'
+          : /signups not allowed|user not found/i.test(error.message)
+            ? 'Эта почта не зарегистрирована в Supabase Authentication. Добавьте пользователя в Authentication → Users.'
+            : error.message;
+        showAuthMessage(`Не удалось выполнить вход: ${message}`, true);
       } finally {
         button.disabled = false;
-        button.textContent = 'Войти';
+        button.textContent = authMode === 'magic' ? 'Отправить ещё раз' : 'Войти';
       }
     }
 
@@ -1994,6 +2068,7 @@
     $('cancelImportButton').addEventListener('click', closeImport);
     $('closeAuthButton').addEventListener('click', closeAuth);
     $('cancelAuthButton').addEventListener('click', closeAuth);
+    $('passwordModeButton').addEventListener('click', toggleAuthMode);
     $('waveModalBg').addEventListener('click', event => {
       if (event.target === $('waveModalBg')) closeWaveModal();
     });
@@ -2011,6 +2086,17 @@
     $('waveFilter').addEventListener('change', render);
     $('departmentFilter').addEventListener('change', render);
     $('worklistBody').addEventListener('click', saveFollowup);
+    sb.auth.onAuthStateChange((event, session) => {
+      authUser = session?.user || null;
+      if (authUser) {
+        sessionStorage.setItem('hr_auth', 'ok');
+      }
+      if (event === 'SIGNED_IN' && authUser && hasAuthCallback) {
+        closeAuth();
+        window.history.replaceState(null, '', window.location.pathname);
+        setTimeout(() => loadData(), 0);
+      }
+    });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         closeWaveModal();
