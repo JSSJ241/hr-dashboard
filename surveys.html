@@ -132,6 +132,18 @@
       background: #fff;
     }
 
+    .btn.danger {
+      border-color: rgba(223, 101, 94, .28);
+      color: #b34a44;
+      background: var(--coral-soft);
+      box-shadow: none;
+    }
+
+    .btn.danger:hover {
+      border-color: rgba(223, 101, 94, .48);
+      background: #f9deda;
+    }
+
     .btn.small {
       min-height: 31px;
       padding: 6px 10px;
@@ -1406,6 +1418,7 @@
             ${wave.status === 'open'
               ? `<button class="btn secondary small" type="button" data-close-wave="${esc(wave.id)}">Завершить</button>`
               : ''}
+            <button class="btn danger small" type="button" data-delete-wave="${esc(wave.id)}">Удалить</button>
           </td>
         </tr>`;
       }).join('');
@@ -1625,6 +1638,41 @@
         alert(`Не удалось завершить волну: ${error.message}`);
         button.disabled = false;
         button.textContent = 'Завершить';
+      }
+    }
+
+    async function deleteWave(event) {
+      const button = event.target.closest('[data-delete-wave]');
+      if (!button) return;
+      const wave = state.waves.find(item => item.id === button.dataset.deleteWave);
+      if (!wave) return;
+      if (!await requireSupabaseAuth()) return;
+
+      const confirmed = confirm(
+        `Удалить волну «${wave.name}»?\n\n` +
+        'Вместе с ней будут удалены участники, результаты прохождения и карточки контактов. Действие нельзя отменить.'
+      );
+      if (!confirmed) return;
+
+      button.disabled = true;
+      button.textContent = 'Удаление…';
+      try {
+        const result = await withTimeout(sb.from('survey_waves')
+          .delete()
+          .eq('id', wave.id));
+        if (result.error) throw result.error;
+        if (activeParticipantsWaveId === wave.id) closeParticipants();
+        await loadData();
+      } catch (error) {
+        if (/row-level security|permission denied|jwt|unauthorized/i.test(error.message)) {
+          authUser = null;
+          showAuthRequired();
+          openAuth();
+        } else {
+          alert(`Не удалось удалить волну: ${error.message}`);
+        }
+        button.disabled = false;
+        button.textContent = 'Удалить';
       }
     }
 
@@ -2416,6 +2464,7 @@
     $('waveEmployeeSearch').addEventListener('input', renderWaveEmployeePicker);
     $('waveEmployeeRows').addEventListener('change', toggleWaveEmployee);
     $('waveJournalBody').addEventListener('click', closeWave);
+    $('waveJournalBody').addEventListener('click', deleteWave);
     $('waveJournalBody').addEventListener('click', event => {
       const button = event.target.closest('[data-manage-participants]');
       if (button) openParticipants(button.dataset.manageParticipants);
