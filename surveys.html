@@ -1787,6 +1787,7 @@
       // The fallback also supports databases created before the notes column.
       if (waveResult.error && /column .*notes|notes.*column|schema cache/i.test(waveResult.error.message)) {
         delete wavePayload.notes;
+        if (payload.notes) wavePayload.name = `${payload.name} · ${payload.notes}`;
         waveResult = await withTimeout(sb.from('survey_waves')
           .insert(wavePayload)
           .select('id')
