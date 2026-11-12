@@ -917,8 +917,8 @@
         <button class="btn secondary small" id="closeAuthButton" type="button" aria-label="Закрыть">×</button>
       </div>
       <p class="hint">
-        Введите рабочую почту — Supabase отправит одноразовую ссылку для входа.
-        Пользователь должен заранее существовать в Supabase Authentication.
+        Введите рабочую почту и пароль, выданный администратором дашборда.
+        Если пароля нет, можно получить одноразовую ссылку на ту же почту.
       </p>
       <label>Рабочая почта
         <input id="authEmail" type="email" autocomplete="username" required>
@@ -929,8 +929,8 @@
       <p class="auth-message" id="authMessage" role="status"></p>
       <div class="modal-actions">
         <button class="btn secondary" id="cancelAuthButton" type="button">Отмена</button>
-        <button class="btn secondary" id="passwordModeButton" type="button">Войти с паролем</button>
-        <button class="btn" id="submitAuthButton" type="submit">Отправить ссылку</button>
+        <button class="btn secondary" id="passwordModeButton" type="button">Войти по ссылке</button>
+        <button class="btn" id="submitAuthButton" type="submit">Войти</button>
       </div>
     </form>
   </div>
@@ -1017,7 +1017,7 @@
     let charts = {};
     let analysis = null;
     let authUser = null;
-    let authMode = 'magic';
+    let authMode = 'password';
     const selectedWaveEmployeeIds = new Set();
 
     function setConnection(kind, label) {
@@ -1057,10 +1057,10 @@
       const notice = $('setupNotice');
       notice.innerHTML = `
         <strong>Требуется вход в Supabase.</strong><br>
-        Чтобы видеть волны и сохранять данные, войдите по ссылке из письма.
-        Пользователь должен существовать в Supabase Authentication.
+        Чтобы видеть волны и сохранять данные, войдите с рабочей почтой и
+        паролем, выданным администратором.
         <br><button class="btn small" type="button" onclick="openAuth()" style="margin-top:10px;">
-          Получить ссылку для входа
+          Войти по рабочей почте
         </button>`;
       notice.classList.add('show');
       setConnection('off', 'требуется вход');
@@ -1996,7 +1996,7 @@
     }
 
     function openAuth() {
-      setAuthMode('magic');
+      setAuthMode('password');
       $('authModalBg').classList.add('open');
       $('authEmail').focus();
     }
